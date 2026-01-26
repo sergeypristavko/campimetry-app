@@ -25,6 +25,7 @@ export function Stimulus({ x, y, size, color, opacity, visible }: StimulusProps)
         opacity,
         boxShadow: `0 0 ${size / 2}px ${color}`,
         transition: 'opacity 0.05s',
+        zIndex: 1,
       }}
     />
   );

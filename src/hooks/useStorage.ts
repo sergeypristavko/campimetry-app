@@ -8,8 +8,8 @@ const defaultSettings: AppSettings = {
   stimulusSizeGoldmann: 'III',
   stimulusColor: '#ffffff',
   backgroundColor: '#808080',
-  stimulusDuration: 200,
-  responseTimeout: 1500,
+  stimulusDuration: 300,
+  responseTimeout: 2000,
   soundEnabled: false,
 };
 

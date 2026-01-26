@@ -10,7 +10,7 @@ import {
   formatReliabilityPercent,
   isReliabilityAcceptable,
 } from '../../utils/statistics';
-import { exportSession } from '../../hooks/useStorage';
+import { exportSessionToPDF } from '../../utils/pdfExport';
 
 interface ResultsScreenProps {
   session: TestSession;
@@ -31,7 +31,7 @@ export function ResultsScreen({ session, onNavigate, onSaveSession }: ResultsScr
   };
 
   const handleExport = () => {
-    exportSession(session);
+    exportSessionToPDF(session);
   };
 
   const duration = Math.round(session.duration / 1000);
@@ -334,7 +334,7 @@ export function ResultsScreen({ session, onNavigate, onSaveSession }: ResultsScr
             {saved ? 'Сохранено' : 'Сохранить'}
           </Button>
           <Button variant="secondary" fullWidth onClick={handleExport}>
-            Экспорт JSON
+            Экспорт PDF
           </Button>
         </div>
       </div>

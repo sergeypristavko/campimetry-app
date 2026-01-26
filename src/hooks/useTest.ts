@@ -9,6 +9,7 @@ import {
   TestStrategy,
   StaircaseState,
   AppSettings,
+  GoldmannSizes,
 } from '../types';
 import {
   getPattern,
@@ -24,6 +25,66 @@ import {
 } from '../utils/algorithms';
 import { calculateStatistics } from '../utils/statistics';
 import { generateSessionId } from './useStorage';
+
+// Check if stimulus position overlaps with UI elements
+// Returns true if the point should be skipped
+function isInUIZone(
+  stimulusX: number,
+  stimulusY: number,
+  stimulusSize: number
+): boolean {
+  // Get screen dimensions
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+  const halfWidth = screenWidth / 2;
+  const halfHeight = screenHeight / 2;
+
+  // Convert stimulus position to screen coordinates (from center)
+  const screenX = halfWidth + stimulusX;
+  const screenY = halfHeight + stimulusY;
+
+  // UI zones (with padding for stimulus size)
+  const padding = stimulusSize + 20;
+
+  // Top-left: "ESC - пауза" (~100x30px at top:10, left:10)
+  const topLeftZone = {
+    left: 0,
+    top: 0,
+    right: 120 + padding,
+    bottom: 50 + padding,
+  };
+
+  // Top-right: "OD (правый) - X/Y" (~180x40px at top:10, right:10)
+  const topRightZone = {
+    left: screenWidth - 200 - padding,
+    top: 0,
+    right: screenWidth,
+    bottom: 50 + padding,
+  };
+
+  // Progress bar at very top
+  const progressBarZone = {
+    left: 0,
+    top: 0,
+    right: screenWidth,
+    bottom: 6 + padding,
+  };
+
+  // Bottom center: instructions
+  const bottomZone = {
+    left: halfWidth - 300,
+    top: screenHeight - 60 - padding,
+    right: halfWidth + 300,
+    bottom: screenHeight,
+  };
+
+  // Check if stimulus center is in any zone
+  const inZone = (zone: { left: number; top: number; right: number; bottom: number }) =>
+    screenX >= zone.left && screenX <= zone.right &&
+    screenY >= zone.top && screenY <= zone.bottom;
+
+  return inZone(topLeftZone) || inZone(topRightZone) || inZone(progressBarZone) || inZone(bottomZone);
+}
 
 interface UseTestProps {
   eye: Eye;
@@ -98,6 +159,9 @@ export function useTest({
   const startTimeRef = useRef<number>(0);
   const awaitingResponseRef = useRef(false);
 
+  // Function refs to avoid stale closures
+  const handleResponseRef = useRef<(seen: boolean) => void>(() => {});
+
   // Sync refs with state
   useEffect(() => { reliabilityRef.current = reliability; }, [reliability]);
 
@@ -153,20 +217,37 @@ export function useTest({
 
   // Show next stimulus
   const showNextStimulus = useCallback(() => {
-    if (isPausedRef.current || !isRunningRef.current) return;
+    console.log('[showNextStimulus] called, isPaused:', isPausedRef.current, 'isRunning:', isRunningRef.current);
+    if (isPausedRef.current || !isRunningRef.current) {
+      console.log('[showNextStimulus] early return - paused or not running');
+      return;
+    }
 
     const points = testPointsRef.current;
     const idx = currentPointIndexRef.current;
+    console.log('[showNextStimulus] idx:', idx, 'total points:', points.length);
 
     // Check if test is complete
     if (idx >= points.length) {
+      console.log('[showNextStimulus] test complete, calling completeTest');
       completeTest();
       return;
     }
 
     const point = points[idx];
+    console.log('[showNextStimulus] point:', point?.id);
     const staircase = staircasesRef.current.get(point.id);
-    if (!staircase) return;
+    if (!staircase) {
+      // Skip this point if staircase not found (shouldn't happen, but handle gracefully)
+      console.warn(`Staircase not found for point ${point.id}, skipping`);
+      currentPointIndexRef.current += 1;
+      setCurrentPointIndex(currentPointIndexRef.current);
+      // Schedule next stimulus
+      interStimulusTimeoutRef.current = setTimeout(() => {
+        showNextStimulus();
+      }, 100);
+      return;
+    }
 
     // Update intensity display
     setCurrentIntensity(staircase.currentIntensity);
@@ -180,17 +261,21 @@ export function useTest({
       setShowStimulus(false);
     }, settings.stimulusDuration);
 
-    // Timeout if no response
+    // Timeout if no response - use ref to avoid stale closure
     responseTimeoutRef.current = setTimeout(() => {
       if (awaitingResponseRef.current) {
-        handleResponse(false);
+        handleResponseRef.current(false);
       }
     }, settings.responseTimeout);
   }, [settings.stimulusDuration, settings.responseTimeout, completeTest]);
 
   // Handle response
   const handleResponse = useCallback((seen: boolean) => {
-    if (!awaitingResponseRef.current || !isRunningRef.current) return;
+    console.log('[handleResponse] called, seen:', seen, 'awaiting:', awaitingResponseRef.current, 'isRunning:', isRunningRef.current);
+    if (!awaitingResponseRef.current || !isRunningRef.current) {
+      console.log('[handleResponse] early return - not awaiting or not running');
+      return;
+    }
 
     clearAllTimeouts();
     awaitingResponseRef.current = false;
@@ -199,10 +284,25 @@ export function useTest({
     const points = testPointsRef.current;
     const idx = currentPointIndexRef.current;
     const point = points[idx];
-    if (!point) return;
+    if (!point) {
+      // No more points, schedule next (will complete test)
+      interStimulusTimeoutRef.current = setTimeout(() => {
+        showNextStimulus();
+      }, 100);
+      return;
+    }
 
     const staircase = staircasesRef.current.get(point.id);
-    if (!staircase) return;
+    if (!staircase) {
+      // Skip this point and move to next
+      console.warn(`Staircase not found for point ${point.id} in handleResponse, skipping`);
+      currentPointIndexRef.current += 1;
+      setCurrentPointIndex(currentPointIndexRef.current);
+      interStimulusTimeoutRef.current = setTimeout(() => {
+        showNextStimulus();
+      }, 100);
+      return;
+    }
 
     if (strategy === 'threshold') {
       // Update staircase
@@ -249,6 +349,11 @@ export function useTest({
     }, 500 + Math.random() * 500);
   }, [strategy, patientAge, clearAllTimeouts, showNextStimulus]);
 
+  // Keep handleResponseRef in sync with handleResponse
+  useEffect(() => {
+    handleResponseRef.current = handleResponse;
+  }, [handleResponse]);
+
   // Public record response
   const recordResponse = useCallback((seen: boolean) => {
     handleResponse(seen);
@@ -256,9 +361,21 @@ export function useTest({
 
   // Start test
   const startTest = useCallback(() => {
+    // Calculate stimulus size for UI zone filtering
+    const stimulusSizeDegrees = GoldmannSizes[settings.stimulusSizeGoldmann];
+    const stimulusSizePx = Math.max(4, Math.round(stimulusSizeDegrees * pixelsPerDegree));
+
     // Generate points
     let points = getPattern(pattern);
     points = markBlindSpotPoints(points, eye);
+
+    // Filter out points that would appear in UI zones
+    points = points.filter(point => {
+      const stimulusX = point.x * pixelsPerDegree;
+      const stimulusY = -point.y * pixelsPerDegree;
+      return !isInUIZone(stimulusX, stimulusY, stimulusSizePx);
+    });
+
     points = shufflePoints(points);
 
     // Initialize staircases
@@ -298,7 +415,7 @@ export function useTest({
     setTimeout(() => {
       showNextStimulus();
     }, 1000);
-  }, [pattern, eye, showNextStimulus]);
+  }, [pattern, eye, settings.stimulusSizeGoldmann, pixelsPerDegree, showNextStimulus]);
 
   // Pause
   const pauseTest = useCallback(() => {
