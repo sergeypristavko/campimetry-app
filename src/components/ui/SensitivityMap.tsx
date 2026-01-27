@@ -6,10 +6,13 @@ interface SensitivityMapProps {
   results: ThresholdResult[];
   pattern: GridPattern;
   eye: Eye;
-  showThresholds?: boolean;  // true = show dB values, false = show deviation
+  showThresholds?: boolean; // true = показать dB, false = показать отклонение
   size?: number;
 }
 
+/**
+ * Карта чувствительности поля зрения
+ */
 export function SensitivityMap({
   results,
   pattern,
@@ -19,126 +22,104 @@ export function SensitivityMap({
 }: SensitivityMapProps) {
   const points = getPattern(pattern);
 
-  // Create a map of results by point ID
+  // Создаём карту результатов по ID точки
   const resultMap = new Map<string, ThresholdResult>();
   results.forEach(r => resultMap.set(r.pointId, r));
 
-  // Calculate scale based on pattern
+  // Масштаб на основе паттерна
   const maxDegrees = pattern === '10-2' ? 12 : pattern === '30-2' ? 33 : 27;
-  const scale = (size / 2) / maxDegrees;
+  const scale = size / 2 / maxDegrees;
 
-  // Map point to screen coordinates
+  // Преобразование координат точки в экранные
   const pointToScreen = (point: TestPoint) => {
-    // For right eye (OD), x is normal
-    // For left eye (OS), x should be mirrored to show anatomical view
+    // Для OD x без изменений, для OS зеркалим для анатомического вида
     const xMultiplier = eye === 'OS' ? -1 : 1;
     return {
       x: size / 2 + point.x * xMultiplier * scale,
-      y: size / 2 - point.y * scale, // Invert Y for screen coordinates
+      y: size / 2 - point.y * scale,
     };
   };
 
   return (
     <div
-      style={{
-        position: 'relative',
-        width: size,
-        height: size,
-        backgroundColor: '#0f3460',
-        borderRadius: '50%',
-        overflow: 'hidden',
-        margin: '0 auto',
-      }}
+      className="relative rounded-full overflow-hidden mx-auto bg-secondary"
+      style={{ width: size, height: size }}
     >
-      {/* Concentric circles */}
-      {[10, 20, 30].filter(r => r <= maxDegrees).map(degrees => (
-        <div
-          key={degrees}
-          style={{
-            position: 'absolute',
-            left: size / 2 - degrees * scale,
-            top: size / 2 - degrees * scale,
-            width: degrees * 2 * scale,
-            height: degrees * 2 * scale,
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '50%',
-          }}
-        />
-      ))}
+      {/* Концентрические круги */}
+      {[10, 20, 30]
+        .filter(r => r <= maxDegrees)
+        .map(degrees => (
+          <div
+            key={degrees}
+            className="absolute border border-white/15 rounded-full"
+            style={{
+              left: size / 2 - degrees * scale,
+              top: size / 2 - degrees * scale,
+              width: degrees * 2 * scale,
+              height: degrees * 2 * scale,
+            }}
+          />
+        ))}
 
-      {/* Axis lines */}
+      {/* Оси */}
       <div
+        className="absolute bg-white/15"
         style={{
-          position: 'absolute',
           left: size / 2,
           top: size * 0.1,
           bottom: size * 0.1,
-          width: '1px',
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          width: 1,
         }}
       />
       <div
+        className="absolute bg-white/15"
         style={{
-          position: 'absolute',
           top: size / 2,
           left: size * 0.1,
           right: size * 0.1,
-          height: '1px',
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          height: 1,
         }}
       />
 
-      {/* Center fixation point */}
+      {/* Центральная точка фиксации */}
       <div
+        className="absolute bg-white rounded-full"
         style={{
-          position: 'absolute',
           left: size / 2 - 4,
           top: size / 2 - 4,
           width: 8,
           height: 8,
-          backgroundColor: '#fff',
-          borderRadius: '50%',
         }}
       />
 
-      {/* Blind spot indicator (for OD on right, OS on left) */}
+      {/* Индикатор слепого пятна */}
       <div
+        className="absolute border-2 border-dashed border-white/30 rounded-full"
         style={{
-          position: 'absolute',
           left: size / 2 + (eye === 'OD' ? 15 : -15) * scale - 8,
           top: size / 2 + 1.5 * scale - 8,
           width: 16,
           height: 16,
-          border: '2px dashed rgba(255,255,255,0.3)',
-          borderRadius: '50%',
         }}
         title="Слепое пятно"
       />
 
-      {/* Result points */}
+      {/* Точки результатов */}
       {points.map(point => {
         const result = resultMap.get(point.id);
         const { x, y } = pointToScreen(point);
         const pointSize = 24;
 
         if (!result) {
-          // No result for this point
           return (
             <div
               key={point.id}
+              className="absolute rounded flex items-center justify-center text-[9px] text-white/50 bg-gray-500/50"
               style={{
-                position: 'absolute',
                 left: x - pointSize / 2,
                 top: y - pointSize / 2,
                 width: pointSize,
                 height: pointSize,
-                borderRadius: '4px',
-                backgroundColor: 'rgba(100,100,100,0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '9px',
-                color: 'rgba(255,255,255,0.5)',
               }}
               title={`(${point.x}°, ${point.y}°)`}
             >
@@ -155,21 +136,13 @@ export function SensitivityMap({
         return (
           <div
             key={point.id}
+            className="absolute rounded flex items-center justify-center text-[10px] font-bold text-black cursor-pointer"
             style={{
-              position: 'absolute',
               left: x - pointSize / 2,
               top: y - pointSize / 2,
               width: pointSize,
               height: pointSize,
-              borderRadius: '4px',
               backgroundColor: color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px',
-              fontWeight: 'bold',
-              color: '#000',
-              cursor: 'pointer',
             }}
             title={`(${point.x}°, ${point.y}°)\nПорог: ${result.threshold} dB\nОтклонение: ${result.totalDeviation} dB`}
           >
@@ -178,52 +151,28 @@ export function SensitivityMap({
         );
       })}
 
-      {/* Labels */}
+      {/* Метки направлений */}
       <div
-        style={{
-          position: 'absolute',
-          top: 4,
-          left: size / 2,
-          transform: 'translateX(-50%)',
-          fontSize: '10px',
-          color: 'rgba(255,255,255,0.5)',
-        }}
+        className="absolute text-[10px] text-white/50 -translate-x-1/2"
+        style={{ top: 4, left: size / 2 }}
       >
         Верх
       </div>
       <div
-        style={{
-          position: 'absolute',
-          bottom: 4,
-          left: size / 2,
-          transform: 'translateX(-50%)',
-          fontSize: '10px',
-          color: 'rgba(255,255,255,0.5)',
-        }}
+        className="absolute text-[10px] text-white/50 -translate-x-1/2"
+        style={{ bottom: 4, left: size / 2 }}
       >
         Низ
       </div>
       <div
-        style={{
-          position: 'absolute',
-          left: 4,
-          top: size / 2,
-          transform: 'translateY(-50%)',
-          fontSize: '10px',
-          color: 'rgba(255,255,255,0.5)',
-        }}
+        className="absolute text-[10px] text-white/50 -translate-y-1/2"
+        style={{ left: 4, top: size / 2 }}
       >
         {eye === 'OD' ? 'Нос' : 'Висок'}
       </div>
       <div
-        style={{
-          position: 'absolute',
-          right: 4,
-          top: size / 2,
-          transform: 'translateY(-50%)',
-          fontSize: '10px',
-          color: 'rgba(255,255,255,0.5)',
-        }}
+        className="absolute text-[10px] text-white/50 -translate-y-1/2"
+        style={{ right: 4, top: size / 2 }}
       >
         {eye === 'OD' ? 'Висок' : 'Нос'}
       </div>
@@ -231,7 +180,9 @@ export function SensitivityMap({
   );
 }
 
-// Color scale legend
+/**
+ * Легенда цветовой шкалы
+ */
 export function ColorScaleLegend({ showThresholds = true }: { showThresholds?: boolean }) {
   const thresholdScale = [
     { value: '30+', color: '#22c55e' },
@@ -255,22 +206,16 @@ export function ColorScaleLegend({ showThresholds = true }: { showThresholds?: b
   const label = showThresholds ? 'Чувствительность (dB)' : 'Отклонение от нормы (dB)';
 
   return (
-    <div style={{ marginTop: '16px' }}>
-      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>
-        {label}
-      </div>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+    <div className="mt-4">
+      <div className="text-xs text-white/70 mb-2">{label}</div>
+      <div className="flex gap-2 flex-wrap">
         {scale.map(item => (
-          <div key={item.value} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div key={item.value} className="flex items-center gap-1">
             <div
-              style={{
-                width: '16px',
-                height: '16px',
-                backgroundColor: item.color,
-                borderRadius: '2px',
-              }}
+              className="w-4 h-4 rounded-sm"
+              style={{ backgroundColor: item.color }}
             />
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>{item.value}</span>
+            <span className="text-[11px] text-white/70">{item.value}</span>
           </div>
         ))}
       </div>

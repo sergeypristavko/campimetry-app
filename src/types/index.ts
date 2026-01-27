@@ -1,66 +1,70 @@
-// Eye types
+/**
+ * Типы данных приложения кампиметрии
+ */
+
+/** Тестируемый глаз */
 export type Eye = 'OD' | 'OS';
 
-// Grid pattern types
+/** Паттерн сетки тестовых точек */
 export type GridPattern = '24-2' | '10-2' | '30-2';
 
-// Test strategy types
+/** Стратегия тестирования */
 export type TestStrategy = 'suprathreshold' | 'threshold';
 
-// Test point in the grid
+/** Точка тестирования в сетке */
 export interface TestPoint {
   id: string;
-  x: number;  // degrees from center
-  y: number;  // degrees from center
-  eccentricity: number;  // distance from center in degrees
-  isBlindSpot?: boolean;
+  x: number; // градусы от центра
+  y: number; // градусы от центра
+  eccentricity: number; // расстояние от центра в градусах
+  isBlindSpot?: boolean; // находится в области слепого пятна
 }
 
-// Single stimulus presentation result
+/** Результат одиночного предъявления стимула */
 export interface StimulusResult {
   pointId: string;
-  intensity: number;  // dB
+  intensity: number; // dB
   seen: boolean;
-  reactionTime?: number;  // ms
+  reactionTime?: number; // мс
   timestamp: number;
 }
 
-// Threshold measurement for a point
+/** Результат измерения порога для точки */
 export interface ThresholdResult {
   pointId: string;
-  threshold: number;  // dB (0-40)
-  deviation: number;  // deviation from age-normal
+  threshold: number; // dB (0-40)
+  deviation: number; // отклонение от возрастной нормы
   totalDeviation: number;
   patternDeviation: number;
-  presentations: number;
+  presentations: number; // количество предъявлений
 }
 
-// Reliability indices
+/** Показатели надёжности теста */
 export interface ReliabilityIndices {
-  fixationLosses: number;
+  fixationLosses: number; // потери фиксации
   fixationLossesTotal: number;
-  falsePositives: number;
+  falsePositives: number; // ложноположительные
   falsePositivesTotal: number;
-  falseNegatives: number;
+  falseNegatives: number; // ложноотрицательные
   falseNegativesTotal: number;
 }
 
-// Test statistics
+/** Статистические показатели теста */
 export interface TestStatistics {
-  MD: number;  // Mean Deviation
-  PSD: number;  // Pattern Standard Deviation
-  VFI: number;  // Visual Field Index (0-100%)
+  MD: number; // Mean Deviation (среднее отклонение)
+  PSD: number; // Pattern Standard Deviation (паттерн-стандартное отклонение)
+  VFI: number; // Visual Field Index (индекс поля зрения, 0-100%)
   GHT?: 'within normal' | 'borderline' | 'outside normal' | 'general reduction' | 'abnormally high';
 }
 
-// Complete test session
+/** Полная запись сессии тестирования */
 export interface TestSession {
   id: string;
-  date: string;
+  date: string; // ISO формат
   eye: Eye;
   pattern: GridPattern;
   strategy: TestStrategy;
-  duration: number;  // ms
+  duration: number; // мс
   results: ThresholdResult[];
   reliability: ReliabilityIndices;
   statistics: TestStatistics;
@@ -68,25 +72,25 @@ export interface TestSession {
   notes?: string;
 }
 
-// Calibration data
+/** Данные калибровки экрана */
 export interface Calibration {
-  pixelsPerDegree: number;
-  screenDistance: number;  // cm
-  dpi: number;
+  pixelsPerDegree: number; // пикселей на градус
+  screenDistance: number; // см
+  dpi: number; // точек на дюйм
   timestamp: number;
 }
 
-// App settings
+/** Настройки приложения */
 export interface AppSettings {
-  stimulusSizeGoldmann: 'I' | 'II' | 'III' | 'IV' | 'V';
-  stimulusColor: string;
-  backgroundColor: string;
-  stimulusDuration: number;  // ms
-  responseTimeout: number;  // ms
-  soundEnabled: boolean;
+  stimulusSizeGoldmann: 'I' | 'II' | 'III' | 'IV' | 'V'; // размер по Гольдману
+  stimulusColor: string; // цвет стимула
+  backgroundColor: string; // цвет фона
+  stimulusDuration: number; // длительность в мс
+  responseTimeout: number; // таймаут ответа в мс
+  soundEnabled: boolean; // звуковое сопровождение
 }
 
-// Navigation screen types
+/** Типы экранов навигации */
 export type Screen =
   | 'home'
   | 'calibration'
@@ -96,29 +100,29 @@ export type Screen =
   | 'results'
   | 'history';
 
-// Staircase state for threshold algorithm
+/** Состояние алгоритма staircase */
 export interface StaircaseState {
   pointId: string;
-  currentIntensity: number;
-  step: number;
-  reversals: number;
-  lastDirection: 'up' | 'down' | null;
-  responses: { intensity: number; seen: boolean }[];
-  threshold: number | null;
-  isComplete: boolean;
+  currentIntensity: number; // текущая интенсивность в dB
+  step: number; // текущий шаг в dB
+  reversals: number; // количество реверсий
+  lastDirection: 'up' | 'down' | null; // последнее направление
+  responses: { intensity: number; seen: boolean }[]; // история ответов
+  threshold: number | null; // вычисленный порог
+  isComplete: boolean; // алгоритм завершён
 }
 
-// Goldmann stimulus sizes in degrees
+/** Размеры стимулов по Гольдману в градусах */
 export const GoldmannSizes: Record<AppSettings['stimulusSizeGoldmann'], number> = {
-  'I': 0.108,
-  'II': 0.217,
-  'III': 0.431,
-  'IV': 0.862,
-  'V': 1.724,
+  I: 0.108,
+  II: 0.217,
+  III: 0.431,
+  IV: 0.862,
+  V: 1.724,
 };
 
-// Age-normal sensitivity values by eccentricity (simplified)
+/** Нормативное значение чувствительности по эксцентриситету (упрощённо) */
 export interface NormalValue {
   eccentricity: number;
-  sensitivity: number;  // dB
+  sensitivity: number; // dB
 }

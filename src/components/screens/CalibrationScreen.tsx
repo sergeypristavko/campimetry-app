@@ -14,6 +14,9 @@ interface CalibrationScreenProps {
   saveCalibration: () => void;
 }
 
+/**
+ * Экран калибровки экрана
+ */
 export function CalibrationScreen({
   onNavigate,
   cardWidthPx,
@@ -32,148 +35,83 @@ export function CalibrationScreen({
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: '#eee',
-        padding: '40px',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-        <Button variant="ghost" onClick={() => onNavigate('home')} style={{ marginBottom: '20px' }}>
+    <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+      <div className="max-w-[700px] mx-auto">
+        <Button variant="ghost" onClick={() => onNavigate('home')} className="mb-5">
           &larr; Назад
         </Button>
 
-        <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Калибровка экрана</h1>
+        <h1 className="text-center mb-8 text-2xl font-bold">Калибровка экрана</h1>
 
         <Card title="Шаг 1: Размер экрана">
-          <p style={{ marginBottom: '20px', color: 'rgba(255,255,255,0.7)' }}>
+          <p className="mb-5 text-white/70">
             Приложите банковскую карту к экрану и подгоните размер прямоугольника так,
             чтобы он точно совпадал с размером карты.
           </p>
 
-          {/* Credit card reference */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginBottom: '24px',
-            }}
-          >
+          {/* Референс кредитной карты */}
+          <div className="flex justify-center mb-6">
             <div
-              style={{
-                width: cardWidthPx,
-                height: cardHeightPx,
-                border: '3px solid #e94560',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(233, 69, 96, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                transition: 'all 0.1s',
-              }}
+              className="border-[3px] border-primary rounded-xl bg-primary/10 flex items-center justify-center flex-col transition-all duration-100"
+              style={{ width: cardWidthPx, height: cardHeightPx }}
             >
-              <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>
+              <div className="text-sm font-bold mb-1">
                 {CARD_WIDTH_MM} x {CARD_HEIGHT_MM} мм
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                Кредитная карта
-              </div>
+              <div className="text-xs text-white/50">Кредитная карта</div>
             </div>
           </div>
 
-          {/* Width slider */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px' }}>
-              Ширина: {cardWidthPx} px
-            </label>
+          {/* Слайдер ширины */}
+          <div className="mb-4">
+            <label className="block mb-2">Ширина: {cardWidthPx} px</label>
             <input
               type="range"
               min="200"
               max="500"
               value={cardWidthPx}
               onChange={e => setCardWidthPx(Number(e.target.value))}
-              style={{ width: '100%' }}
+              className="w-full"
             />
           </div>
 
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderRadius: '8px',
-              fontSize: '14px',
-            }}
-          >
+          <div className="p-3 bg-white/5 rounded-lg text-sm">
             Определённый DPI: <strong>{dpi}</strong> точек/дюйм
           </div>
         </Card>
 
         <Card title="Шаг 2: Расстояние до экрана">
-          <p style={{ marginBottom: '20px', color: 'rgba(255,255,255,0.7)' }}>
+          <p className="mb-5 text-white/70">
             Укажите расстояние, на котором вы будете находиться от экрана во время теста.
             Рекомендуемое расстояние: 30-50 см.
           </p>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px' }}>
-              Расстояние: {screenDistance} см
-            </label>
+          <div className="mb-4">
+            <label className="block mb-2">Расстояние: {screenDistance} см</label>
             <input
               type="range"
               min="20"
               max="100"
               value={screenDistance}
               onChange={e => setScreenDistance(Number(e.target.value))}
-              style={{ width: '100%' }}
+              className="w-full"
             />
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '12px',
-            }}
-          >
-            <div
-              style={{
-                padding: '12px',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                Пикселей на градус
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                {pixelsPerDegree.toFixed(1)}
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 bg-white/5 rounded-lg text-center">
+              <div className="text-xs text-white/50">Пикселей на градус</div>
+              <div className="text-xl font-bold">{pixelsPerDegree.toFixed(1)}</div>
             </div>
-            <div
-              style={{
-                padding: '12px',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                Размер 1° в пикселях
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                {Math.round(pixelsPerDegree)} px
-              </div>
+            <div className="p-3 bg-white/5 rounded-lg text-center">
+              <div className="text-xs text-white/50">Размер 1° в пикселях</div>
+              <div className="text-xl font-bold">{Math.round(pixelsPerDegree)} px</div>
             </div>
           </div>
         </Card>
 
         <Card>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginBottom: '16px' }}>
+          <div className="text-sm text-white/60 mb-4">
             <strong>Важно:</strong> Калибровка влияет на точность измерений. После
             калибровки поддерживайте указанное расстояние до экрана во время теста.
           </div>

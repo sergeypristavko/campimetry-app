@@ -1,16 +1,25 @@
+/**
+ * Алгоритмы тестирования порога чувствительности
+ * Реализация алгоритма staircase 4-2 для пороговой стратегии
+ */
+
 import { StaircaseState, TestPoint, ThresholdResult } from '../types';
 import { getAgeNormalSensitivity } from './normalValues';
 
-// 4-2 Staircase algorithm constants
-const INITIAL_INTENSITY = 24; // dB
-const LARGE_STEP = 4; // dB
-const SMALL_STEP = 2; // dB
-const REQUIRED_REVERSALS = 2;
-const MAX_PRESENTATIONS = 10;
-const MIN_INTENSITY = 0;
-const MAX_INTENSITY = 40;
+// Константы алгоритма staircase 4-2
+const INITIAL_INTENSITY = 24; // начальная интенсивность в dB
+const LARGE_STEP = 4; // большой шаг в dB
+const SMALL_STEP = 2; // малый шаг в dB
+const REQUIRED_REVERSALS = 2; // требуемое количество реверсий
+const MAX_PRESENTATIONS = 10; // максимальное количество предъявлений
+const MIN_INTENSITY = 0; // минимальная интенсивность
+const MAX_INTENSITY = 40; // максимальная интенсивность
 
-// Initialize staircase for a point
+/**
+ * Инициализирует состояние staircase для точки
+ * @param point - Точка теста
+ * @returns Начальное состояние staircase
+ */
 export function initializeStaircase(point: TestPoint): StaircaseState {
   return {
     pointId: point.id,
@@ -24,28 +33,32 @@ export function initializeStaircase(point: TestPoint): StaircaseState {
   };
 }
 
-// Process a response and update staircase state
+/**
+ * Обрабатывает ответ пациента и обновляет состояние staircase
+ * @param state - Текущее состояние
+ * @param seen - Видел ли пациент стимул
+ * @returns Обновлённое состояние
+ */
 export function processResponse(state: StaircaseState, seen: boolean): StaircaseState {
   const newResponses = [...state.responses, { intensity: state.currentIntensity, seen }];
 
-  // Determine new direction
+  // Определяем направление изменения интенсивности
   const newDirection: 'up' | 'down' = seen ? 'down' : 'up';
 
-  // Check for reversal
+  // Проверяем реверсию (смена направления)
   let newReversals = state.reversals;
   let newStep = state.step;
 
   if (state.lastDirection !== null && state.lastDirection !== newDirection) {
     newReversals++;
-    // Switch to small step after first reversal
+    // После первой реверсии переключаемся на малый шаг
     if (newReversals >= 1) {
       newStep = SMALL_STEP;
     }
   }
 
-  // Check if complete
+  // Проверяем завершение алгоритма
   if (newReversals >= REQUIRED_REVERSALS || newResponses.length >= MAX_PRESENTATIONS) {
-    // Calculate threshold from last few responses
     const threshold = calculateThreshold(newResponses);
     return {
       ...state,
@@ -57,13 +70,13 @@ export function processResponse(state: StaircaseState, seen: boolean): Staircase
     };
   }
 
-  // Calculate new intensity
+  // Вычисляем новую интенсивность
   let newIntensity = state.currentIntensity;
   if (seen) {
-    // Decrease intensity (make dimmer = harder to see)
+    // Уменьшаем интенсивность (делаем тусклее = сложнее увидеть)
     newIntensity = Math.max(MIN_INTENSITY, state.currentIntensity - newStep);
   } else {
-    // Increase intensity (make brighter = easier to see)
+    // Увеличиваем интенсивность (делаем ярче = легче увидеть)
     newIntensity = Math.min(MAX_INTENSITY, state.currentIntensity + newStep);
   }
 
@@ -79,11 +92,14 @@ export function processResponse(state: StaircaseState, seen: boolean): Staircase
   };
 }
 
-// Calculate threshold from responses
+/**
+ * Вычисляет порог на основе ответов
+ * Усредняет интенсивности в точках реверсии
+ */
 function calculateThreshold(responses: { intensity: number; seen: boolean }[]): number {
   if (responses.length === 0) return INITIAL_INTENSITY;
 
-  // Find reversal points and average them
+  // Находим точки реверсии и усредняем их
   const reversalIntensities: number[] = [];
 
   for (let i = 1; i < responses.length; i++) {
@@ -91,19 +107,18 @@ function calculateThreshold(responses: { intensity: number; seen: boolean }[]): 
     const currSeen = responses[i].seen;
 
     if (prevSeen !== currSeen) {
-      // Average the two intensities around the reversal
+      // Усредняем интенсивности около точки реверсии
       reversalIntensities.push((responses[i - 1].intensity + responses[i].intensity) / 2);
     }
   }
 
   if (reversalIntensities.length > 0) {
-    // Average the reversal points
     return Math.round(
       reversalIntensities.reduce((sum, val) => sum + val, 0) / reversalIntensities.length
     );
   }
 
-  // Fallback: use the last intensity
+  // Запасной вариант: используем последнюю интенсивность
   const lastSeen = responses[responses.length - 1].seen;
   const lastIntensity = responses[responses.length - 1].intensity;
 
@@ -114,7 +129,9 @@ function calculateThreshold(responses: { intensity: number; seen: boolean }[]): 
   }
 }
 
-// Convert staircase result to threshold result
+/**
+ * Преобразует результат staircase в результат измерения порога
+ */
 export function staircaseToThresholdResult(
   state: StaircaseState,
   point: TestPoint,
@@ -129,34 +146,37 @@ export function staircaseToThresholdResult(
     threshold,
     deviation: totalDeviation,
     totalDeviation,
-    patternDeviation: 0, // Will be calculated after all points are done
+    patternDeviation: 0, // Рассчитывается после завершения всех точек
     presentations: state.responses.length,
   };
 }
 
-// Suprathreshold test - single intensity presentation
+/**
+ * Возвращает интенсивность для надпороговой стратегии
+ * Стимул показывается на 6 dB выше ожидаемого порога
+ */
 export function getSuprathresholdIntensity(eccentricity: number, patientAge?: number): number {
   const normalSensitivity = getAgeNormalSensitivity(eccentricity, patientAge);
-  // Show stimulus 6 dB above threshold (should be easily seen by normal eye)
   return Math.min(MAX_INTENSITY, normalSensitivity + 6);
 }
 
-// Calculate intensity in linear units for display (0-1 scale for CSS opacity)
+/**
+ * Преобразует интенсивность в dB в линейную шкалу (0-1) для CSS opacity
+ * 0 dB = максимальная яркость (opacity 1.0)
+ * 40 dB = минимальная яркость (opacity ~0.08)
+ */
 export function intensityToLinear(intensityDb: number): number {
-  // For screen display, map dB to visible opacity range
-  // 0 dB = brightest (opacity 1.0), 40 dB = dimmest (opacity ~0.1)
-  // Use a more gradual scale suitable for monitors
   const maxDb = 40;
   const normalizedDb = Math.max(0, Math.min(maxDb, intensityDb));
-  // Linear mapping: higher dB = lower opacity, but keep minimum visible
   const minOpacity = 0.08;
   const maxOpacity = 1.0;
   return maxOpacity - (normalizedDb / maxDb) * (maxOpacity - minOpacity);
 }
 
-// Convert linear intensity to dB
+/**
+ * Преобразует линейную интенсивность обратно в dB
+ */
 export function linearToIntensity(linear: number): number {
-  // Inverse of intensityToLinear
   const clampedLinear = Math.max(0.0001, Math.min(1, linear));
   return Math.round(-10 * Math.log10(clampedLinear));
 }

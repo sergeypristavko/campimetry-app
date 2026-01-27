@@ -8,34 +8,20 @@ interface HomeScreenProps {
   sessionsCount: number;
 }
 
+/**
+ * Главный экран приложения
+ */
 export function HomeScreen({ onNavigate, isCalibrated, sessionsCount }: HomeScreenProps) {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: '#eee',
-        padding: '40px',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '16px', fontSize: '32px' }}>
-          Кампиметрия
-        </h1>
-        <p
-          style={{
-            textAlign: 'center',
-            marginBottom: '40px',
-            color: 'rgba(255,255,255,0.6)',
-            fontSize: '14px',
-          }}
-        >
+    <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+      <div className="max-w-xl mx-auto">
+        <h1 className="text-center mb-4 text-3xl font-bold">Кампиметрия</h1>
+        <p className="text-center mb-10 text-white/60 text-sm">
           Исследование поля зрения
         </p>
 
         <Card>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="flex flex-col gap-4">
             <Button
               variant="primary"
               size="lg"
@@ -62,15 +48,7 @@ export function HomeScreen({ onNavigate, isCalibrated, sessionsCount }: HomeScre
             >
               История тестов
               {sessionsCount > 0 && (
-                <span
-                  style={{
-                    backgroundColor: '#e94560',
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    marginLeft: '8px',
-                  }}
-                >
+                <span className="bg-primary px-2 py-0.5 rounded-xl text-xs ml-2">
                   {sessionsCount}
                 </span>
               )}
@@ -79,15 +57,15 @@ export function HomeScreen({ onNavigate, isCalibrated, sessionsCount }: HomeScre
         </Card>
 
         <Card title="О программе">
-          <p style={{ lineHeight: '1.6', marginBottom: '16px', color: 'rgba(255,255,255,0.8)' }}>
+          <p className="leading-relaxed mb-4 text-white/80">
             Программа для исследования полей зрения методом статической периметрии.
             Позволяет выявить дефекты поля зрения при различных заболеваниях глаз.
           </p>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
-            <div style={{ marginBottom: '8px' }}>
+          <div className="text-sm text-white/60">
+            <div className="mb-2">
               <strong>Доступные паттерны:</strong> 24-2, 10-2, 30-2
             </div>
-            <div style={{ marginBottom: '8px' }}>
+            <div className="mb-2">
               <strong>Стратегии:</strong> пороговая, надпороговая
             </div>
             <div>
@@ -96,13 +74,8 @@ export function HomeScreen({ onNavigate, isCalibrated, sessionsCount }: HomeScre
           </div>
         </Card>
 
-        <Card
-          style={{
-            backgroundColor: '#2d1f1f',
-            border: '1px solid #5c2323',
-          }}
-        >
-          <div style={{ fontSize: '13px', color: '#f87171' }}>
+        <Card className="bg-[#2d1f1f] border border-[#5c2323]">
+          <div className="text-[13px] text-danger">
             <strong>Внимание!</strong> Данное приложение предназначено только для
             ознакомительных и образовательных целей. Оно не является медицинским
             устройством и не может заменить профессиональную диагностику у
@@ -111,19 +84,9 @@ export function HomeScreen({ onNavigate, isCalibrated, sessionsCount }: HomeScre
         </Card>
 
         {!isCalibrated && (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '16px',
-              backgroundColor: '#1f2937',
-              borderRadius: '8px',
-              marginTop: '20px',
-            }}
-          >
-            <div style={{ fontSize: '14px', color: '#facc15', marginBottom: '8px' }}>
-              Требуется калибровка
-            </div>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+          <div className="text-center p-4 bg-gray-800 rounded-lg mt-5">
+            <div className="text-sm text-warning mb-2">Требуется калибровка</div>
+            <div className="text-xs text-white/50">
               Для точного отображения стимулов необходимо выполнить калибровку экрана
             </div>
           </div>

@@ -11,6 +11,17 @@ import {
   isReliabilityAcceptable,
 } from '../../utils/statistics';
 import { exportSessionToPDF } from '../../utils/pdfExport';
+import {
+  formatDuration,
+  formatDate,
+  formatTime,
+  getMDColor,
+  getPSDColor,
+  getVFIColor,
+  getGHTLabel,
+  getGHTColor,
+  formatMD,
+} from '../../utils/formatting';
 
 interface ResultsScreenProps {
   session: TestSession;
@@ -18,6 +29,9 @@ interface ResultsScreenProps {
   onSaveSession: (session: TestSession) => void;
 }
 
+/**
+ * Экран результатов теста
+ */
 export function ResultsScreen({ session, onNavigate, onSaveSession }: ResultsScreenProps) {
   const [showThresholds, setShowThresholds] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -34,275 +48,136 @@ export function ResultsScreen({ session, onNavigate, onSaveSession }: ResultsScr
     exportSessionToPDF(session);
   };
 
-  const duration = Math.round(session.duration / 1000);
-  const minutes = Math.floor(duration / 60);
-  const seconds = duration % 60;
+  const duration = formatDuration(session.duration);
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: '#eee',
-        padding: '40px',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Результаты теста</h1>
+    <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+      <div className="max-w-[900px] mx-auto">
+        <h1 className="text-center mb-8 text-2xl font-bold">Результаты теста</h1>
 
-        {/* Summary cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '16px',
-            marginBottom: '24px',
-          }}
-        >
-          <Card style={{ textAlign: 'center', marginBottom: 0 }}>
-            <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>Глаз</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
-              {session.eye}
-            </div>
-            <div style={{ fontSize: '12px', opacity: 0.6 }}>
+        {/* Карточки сводки */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4 mb-6">
+          <Card className="text-center !mb-0">
+            <div className="text-xs opacity-60 mb-1">Глаз</div>
+            <div className="text-3xl font-bold">{session.eye}</div>
+            <div className="text-xs opacity-60">
               {session.eye === 'OD' ? 'Правый' : 'Левый'}
             </div>
           </Card>
 
-          <Card style={{ textAlign: 'center', marginBottom: 0 }}>
-            <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>Паттерн</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
-              {session.pattern}
-            </div>
-            <div style={{ fontSize: '12px', opacity: 0.6 }}>
-              {session.results.length} точек
-            </div>
+          <Card className="text-center !mb-0">
+            <div className="text-xs opacity-60 mb-1">Паттерн</div>
+            <div className="text-3xl font-bold">{session.pattern}</div>
+            <div className="text-xs opacity-60">{session.results.length} точек</div>
           </Card>
 
-          <Card style={{ textAlign: 'center', marginBottom: 0 }}>
-            <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
-              Длительность
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
-              {minutes}:{seconds.toString().padStart(2, '0')}
-            </div>
-            <div style={{ fontSize: '12px', opacity: 0.6 }}>мин:сек</div>
+          <Card className="text-center !mb-0">
+            <div className="text-xs opacity-60 mb-1">Длительность</div>
+            <div className="text-3xl font-bold">{duration}</div>
+            <div className="text-xs opacity-60">мин:сек</div>
           </Card>
 
-          <Card style={{ textAlign: 'center', marginBottom: 0 }}>
-            <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>Дата</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
-              {new Date(session.date).toLocaleDateString('ru-RU')}
-            </div>
-            <div style={{ fontSize: '12px', opacity: 0.6 }}>
-              {new Date(session.date).toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </div>
+          <Card className="text-center !mb-0">
+            <div className="text-xs opacity-60 mb-1">Дата</div>
+            <div className="text-xl font-bold">{formatDate(session.date)}</div>
+            <div className="text-xs opacity-60">{formatTime(session.date)}</div>
           </Card>
         </div>
 
-        {/* Statistics */}
+        {/* Статистика */}
         <Card title="Статистика">
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
-            }}
-          >
-            <div
-              style={{
-                padding: '20px',
-                backgroundColor: '#0f3460',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '8px' }}>
-                MD (Mean Deviation)
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-5 bg-secondary rounded-lg text-center">
+              <div className="text-xs opacity-60 mb-2">MD (Mean Deviation)</div>
+              <div className="text-3xl font-bold" style={{ color: getMDColor(statistics.MD) }}>
+                {formatMD(statistics.MD)}
               </div>
-              <div
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 'bold',
-                  color: statistics.MD >= -2 ? '#4ade80' : statistics.MD >= -6 ? '#facc15' : '#f87171',
-                }}
-              >
-                {statistics.MD > 0 ? '+' : ''}{statistics.MD.toFixed(2)}
-              </div>
-              <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '4px' }}>
-                {interpretMD(statistics.MD)}
-              </div>
+              <div className="text-[11px] opacity-70 mt-1">{interpretMD(statistics.MD)}</div>
             </div>
 
-            <div
-              style={{
-                padding: '20px',
-                backgroundColor: '#0f3460',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '8px' }}>
-                PSD (Pattern Std Dev)
-              </div>
-              <div
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 'bold',
-                  color: statistics.PSD <= 2 ? '#4ade80' : statistics.PSD <= 4 ? '#facc15' : '#f87171',
-                }}
-              >
+            <div className="p-5 bg-secondary rounded-lg text-center">
+              <div className="text-xs opacity-60 mb-2">PSD (Pattern Std Dev)</div>
+              <div className="text-3xl font-bold" style={{ color: getPSDColor(statistics.PSD) }}>
                 {statistics.PSD.toFixed(2)}
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '4px' }}>
-                {interpretPSD(statistics.PSD)}
-              </div>
+              <div className="text-[11px] opacity-70 mt-1">{interpretPSD(statistics.PSD)}</div>
             </div>
 
-            <div
-              style={{
-                padding: '20px',
-                backgroundColor: '#0f3460',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '8px' }}>
-                VFI (Visual Field Index)
-              </div>
-              <div
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 'bold',
-                  color: statistics.VFI >= 95 ? '#4ade80' : statistics.VFI >= 80 ? '#facc15' : '#f87171',
-                }}
-              >
+            <div className="p-5 bg-secondary rounded-lg text-center">
+              <div className="text-xs opacity-60 mb-2">VFI (Visual Field Index)</div>
+              <div className="text-3xl font-bold" style={{ color: getVFIColor(statistics.VFI) }}>
                 {statistics.VFI}%
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '4px' }}>
-                {interpretVFI(statistics.VFI)}
-              </div>
+              <div className="text-[11px] opacity-70 mt-1">{interpretVFI(statistics.VFI)}</div>
             </div>
           </div>
 
           {statistics.GHT && (
-            <div
-              style={{
-                marginTop: '16px',
-                padding: '12px',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <span style={{ opacity: 0.6 }}>GHT: </span>
-              <span
-                style={{
-                  fontWeight: 'bold',
-                  color:
-                    statistics.GHT === 'within normal'
-                      ? '#4ade80'
-                      : statistics.GHT === 'borderline'
-                      ? '#facc15'
-                      : '#f87171',
-                }}
-              >
-                {statistics.GHT === 'within normal' && 'В пределах нормы'}
-                {statistics.GHT === 'borderline' && 'Пограничный'}
-                {statistics.GHT === 'outside normal' && 'За пределами нормы'}
-                {statistics.GHT === 'general reduction' && 'Общее снижение'}
-                {statistics.GHT === 'abnormally high' && 'Аномально высокий'}
+            <div className="mt-4 p-3 bg-white/5 rounded-lg text-center">
+              <span className="opacity-60">GHT: </span>
+              <span className="font-bold" style={{ color: getGHTColor(statistics.GHT) }}>
+                {getGHTLabel(statistics.GHT)}
               </span>
             </div>
           )}
         </Card>
 
-        {/* Reliability */}
+        {/* Надёжность */}
         <Card title="Показатели надёжности">
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
-              marginBottom: '12px',
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', opacity: 0.6 }}>Потери фиксации</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+          <div className="grid grid-cols-3 gap-4 mb-3">
+            <div className="text-center">
+              <div className="text-xs opacity-60">Потери фиксации</div>
+              <div className="text-lg font-bold">
                 {reliability.fixationLosses}/{reliability.fixationLossesTotal}
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.5 }}>
+              <div className="text-[11px] opacity-50">
                 {formatReliabilityPercent(reliability.fixationLosses, reliability.fixationLossesTotal)}
               </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', opacity: 0.6 }}>Ложноположительные</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+            <div className="text-center">
+              <div className="text-xs opacity-60">Ложноположительные</div>
+              <div className="text-lg font-bold">
                 {reliability.falsePositives}/{reliability.falsePositivesTotal}
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.5 }}>
+              <div className="text-[11px] opacity-50">
                 {formatReliabilityPercent(reliability.falsePositives, reliability.falsePositivesTotal)}
               </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', opacity: 0.6 }}>Ложноотрицательные</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+            <div className="text-center">
+              <div className="text-xs opacity-60">Ложноотрицательные</div>
+              <div className="text-lg font-bold">
                 {reliability.falseNegatives}/{reliability.falseNegativesTotal}
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.5 }}>
+              <div className="text-[11px] opacity-50">
                 {formatReliabilityPercent(reliability.falseNegatives, reliability.falseNegativesTotal)}
               </div>
             </div>
           </div>
 
           {!reliabilityOk && (
-            <div
-              style={{
-                padding: '8px 12px',
-                backgroundColor: 'rgba(248, 113, 113, 0.1)',
-                border: '1px solid rgba(248, 113, 113, 0.3)',
-                borderRadius: '4px',
-                fontSize: '12px',
-                color: '#f87171',
-              }}
-            >
+            <div className="p-2 px-3 bg-danger/10 border border-danger/30 rounded text-xs text-danger">
               Показатели надёжности ниже нормы. Результаты теста могут быть неточными.
             </div>
           )}
         </Card>
 
-        {/* Sensitivity Map */}
+        {/* Карта поля зрения */}
         <Card title="Карта поля зрения">
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <div className="mb-4">
+            <div className="flex gap-2 justify-center">
               <button
                 onClick={() => setShowThresholds(true)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: showThresholds ? '#e94560' : '#0f3460',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
+                className={`px-4 py-2 text-white border-none rounded cursor-pointer ${
+                  showThresholds ? 'bg-primary' : 'bg-secondary'
+                }`}
               >
                 Чувствительность
               </button>
               <button
                 onClick={() => setShowThresholds(false)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: !showThresholds ? '#e94560' : '#0f3460',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
+                className={`px-4 py-2 text-white border-none rounded cursor-pointer ${
+                  !showThresholds ? 'bg-primary' : 'bg-secondary'
+                }`}
               >
                 Отклонение
               </button>
@@ -320,8 +195,8 @@ export function ResultsScreen({ session, onNavigate, onSaveSession }: ResultsScr
           <ColorScaleLegend showThresholds={showThresholds} />
         </Card>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+        {/* Действия */}
+        <div className="flex gap-4 mt-6">
           <Button variant="secondary" fullWidth onClick={() => onNavigate('home')}>
             На главную
           </Button>

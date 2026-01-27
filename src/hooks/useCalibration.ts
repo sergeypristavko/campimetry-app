@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Calibration } from '../types';
+import {
+  calculateDPI,
+  calculatePixelsPerDegree,
+  getDefaultCardWidthPx,
+  cardWidthFromDPI,
+  CARD_ASPECT_RATIO,
+  CREDIT_CARD_WIDTH_MM,
+  CREDIT_CARD_HEIGHT_MM,
+} from '../utils/calibration';
 
 const STORAGE_KEY = 'campimetry_calibration';
-const CREDIT_CARD_WIDTH_MM = 85.6;
-const CREDIT_CARD_HEIGHT_MM = 53.98;
-const MM_PER_INCH = 25.4;
 
 interface UseCalibrationReturn {
   calibration: Calibration | null;
@@ -21,40 +27,35 @@ interface UseCalibrationReturn {
   pixelsToDegrees: (pixels: number) => number;
 }
 
+/**
+ * Хук для управления калибровкой экрана
+ * Обеспечивает точное соответствие между пикселями и градусами угла зрения
+ */
 export function useCalibration(): UseCalibrationReturn {
-  // Default card width based on common screen DPI (~96)
-  const defaultCardWidthPx = Math.round((CREDIT_CARD_WIDTH_MM / MM_PER_INCH) * 96);
+  const defaultCardWidthPx = getDefaultCardWidthPx();
 
   const [calibration, setCalibration] = useState<Calibration | null>(null);
   const [cardWidthPx, setCardWidthPx] = useState(defaultCardWidthPx);
-  const [screenDistance, setScreenDistance] = useState(50); // Default 50cm
+  const [screenDistance, setScreenDistance] = useState(50);
 
-  // Load calibration from storage on mount
+  // Загрузка калибровки из localStorage при монтировании
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as Calibration;
         setCalibration(parsed);
-
-        // Reconstruct card width from DPI
-        const restoredCardWidth = (CREDIT_CARD_WIDTH_MM / MM_PER_INCH) * parsed.dpi;
-        setCardWidthPx(Math.round(restoredCardWidth));
+        setCardWidthPx(cardWidthFromDPI(parsed.dpi));
         setScreenDistance(parsed.screenDistance);
       }
-    } catch (e) {
-      console.error('Failed to load calibration:', e);
+    } catch {
+      // Игнорируем ошибки парсинга
     }
   }, []);
 
-  // Calculate DPI from card width
-  const dpi = (cardWidthPx / CREDIT_CARD_WIDTH_MM) * MM_PER_INCH;
-
-  // Calculate pixels per degree based on viewing distance
-  // Using: tan(1°) * distance_in_pixels = pixels_per_degree
-  // distance_in_pixels = distance_cm * (dpi / 2.54)
-  const distanceInPixels = screenDistance * (dpi / 2.54);
-  const pixelsPerDegree = distanceInPixels * Math.tan((Math.PI / 180));
+  // Вычисленные значения
+  const dpi = calculateDPI(cardWidthPx);
+  const pixelsPerDegree = calculatePixelsPerDegree(cardWidthPx, screenDistance);
 
   const saveCalibration = useCallback(() => {
     const newCalibration: Calibration = {
@@ -76,9 +77,7 @@ export function useCalibration(): UseCalibrationReturn {
   }, [defaultCardWidthPx]);
 
   const degreesToPixels = useCallback(
-    (degrees: number): number => {
-      return degrees * pixelsPerDegree;
-    },
+    (degrees: number): number => degrees * pixelsPerDegree,
     [pixelsPerDegree]
   );
 
@@ -106,7 +105,5 @@ export function useCalibration(): UseCalibrationReturn {
   };
 }
 
-// Export card dimensions for UI
-export const CARD_ASPECT_RATIO = CREDIT_CARD_HEIGHT_MM / CREDIT_CARD_WIDTH_MM;
-export const CARD_WIDTH_MM = CREDIT_CARD_WIDTH_MM;
-export const CARD_HEIGHT_MM = CREDIT_CARD_HEIGHT_MM;
+// Реэкспорт констант для обратной совместимости
+export { CARD_ASPECT_RATIO, CREDIT_CARD_WIDTH_MM as CARD_WIDTH_MM, CREDIT_CARD_HEIGHT_MM as CARD_HEIGHT_MM };

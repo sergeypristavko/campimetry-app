@@ -54,3 +54,36 @@ All state flows through App.tsx which orchestrates between screens and custom ho
 ### Build Configuration
 
 Uses `vite-plugin-singlefile` to bundle everything into a single HTML file for offline/portable use. Path alias `@/*` maps to `./src/*`.
+
+## Context Management
+
+Use subagents for long-running or exploratory tasks to avoid polluting main context.
+
+**When to use subagents:**
+- Codebase exploration and research
+- Investigation and debugging
+- Parallel independent work
+
+**When NOT to use:**
+- Quick file edits
+- Tasks needing user interaction
+- Simple lookups
+
+## Never
+
+- Add `// @ts-nocheck` to files
+- Add `Co-Authored-By` to commits
+- Leave commented-out code
+- Leave `console.log` or debug statements
+- Introduce test regressions (all existing tests must pass)
+
+## Code Quality
+
+- **Hooks should contain minimal logic** - Extract complex logic into pure helper functions
+- **Prefer pure functions** - Easier to test, reason about, and reuse
+- **Keep functions small** - Functions should do one thing; if it's hard to name, it's doing too much
+- **Keep files focused** - Split large files into smaller, single-purpose modules
+
+## Philosophy
+
+Code quality over velocity. Every component should be reusable, accessible, and properly typed. Leave the codebase better than you found it.

@@ -1,10 +1,12 @@
-
 interface FixationCrossProps {
   size?: number;
   color?: string;
   thickness?: number;
 }
 
+/**
+ * Крестик фиксации в центре экрана
+ */
 export function FixationCross({
   size = 20,
   color = '#000',
@@ -12,38 +14,18 @@ export function FixationCross({
 }: FixationCrossProps) {
   return (
     <div
-      style={{
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: size,
-        height: size,
-      }}
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{ width: size, height: size }}
     >
-      {/* Vertical line */}
+      {/* Вертикальная линия */}
       <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: 0,
-          bottom: 0,
-          width: thickness,
-          backgroundColor: color,
-          transform: 'translateX(-50%)',
-        }}
+        className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2"
+        style={{ width: thickness, backgroundColor: color }}
       />
-      {/* Horizontal line */}
+      {/* Горизонтальная линия */}
       <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: 0,
-          right: 0,
-          height: thickness,
-          backgroundColor: color,
-          transform: 'translateY(-50%)',
-        }}
+        className="absolute top-1/2 left-0 right-0 -translate-y-1/2"
+        style={{ height: thickness, backgroundColor: color }}
       />
     </div>
   );

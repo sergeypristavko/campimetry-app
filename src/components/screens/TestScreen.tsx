@@ -3,7 +3,8 @@ import { FixationCross } from '../ui/FixationCross';
 import { Stimulus } from '../ui/Stimulus';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Button } from '../ui/Button';
-import { Eye, AppSettings, GoldmannSizes } from '../../types';
+import { Eye, AppSettings } from '../../types';
+import { calculateStimulusSizePx } from '../../utils/stimulusCalculations';
 
 interface TestScreenProps {
   eye: Eye;
@@ -26,6 +27,9 @@ interface TestScreenProps {
   isFullscreen: boolean;
 }
 
+/**
+ * Экран проведения теста
+ */
 export function TestScreen({
   eye,
   settings,
@@ -48,11 +52,10 @@ export function TestScreen({
 }: TestScreenProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate stimulus size in pixels
-  const stimulusSizeDegrees = GoldmannSizes[settings.stimulusSizeGoldmann];
-  const stimulusSizePx = Math.max(4, Math.round(stimulusSizeDegrees * pixelsPerDegree));
+  // Размер стимула в пикселях
+  const stimulusSizePx = calculateStimulusSizePx(settings.stimulusSizeGoldmann, pixelsPerDegree);
 
-  // Handle keyboard events
+  // Обработка клавиатуры
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -74,45 +77,35 @@ export function TestScreen({
     [isRunning, isPaused, onResponse, onPause, onResume]
   );
 
-  // Handle click
+  // Обработка клика
   const handleClick = useCallback(() => {
     if (isRunning && !isPaused) {
       onResponse(true);
     }
   }, [isRunning, isPaused, onResponse]);
 
-  // Set up event listeners
+  // Установка обработчиков
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Auto-enter fullscreen on mount
+  // Автоматический переход в полноэкранный режим
   useEffect(() => {
     if (!isFullscreen) {
       enterFullscreen();
     }
   }, []);
 
+  // Экран паузы
   if (isPaused) {
     return (
-      <div
-        style={{
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: '#1a1a2e',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'system-ui, sans-serif',
-        }}
-      >
-        <h2 style={{ color: '#fff', marginBottom: '24px' }}>Тест приостановлен</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '32px' }}>
+      <div className="w-screen h-screen bg-background flex flex-col items-center justify-center font-sans">
+        <h2 className="text-white mb-6 text-2xl">Тест приостановлен</h2>
+        <p className="text-white/60 mb-8">
           Выполнено {completedPoints} из {totalPoints} точек ({Math.round(progress)}%)
         </p>
-        <div style={{ display: 'flex', gap: '16px' }}>
+        <div className="flex gap-4">
           <Button variant="primary" size="lg" onClick={onResume}>
             Продолжить
           </Button>
@@ -128,67 +121,28 @@ export function TestScreen({
     <div
       ref={containerRef}
       onClick={handleClick}
-      style={{
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: settings.backgroundColor,
-        position: 'relative',
-        cursor: 'none',
-        overflow: 'hidden',
-        userSelect: 'none',
-      }}
+      className="w-screen h-screen relative cursor-none overflow-hidden select-none"
+      style={{ backgroundColor: settings.backgroundColor }}
     >
-      {/* Progress bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-        }}
-      >
+      {/* Полоса прогресса */}
+      <div className="absolute top-0 left-0 right-0 z-10">
         <ProgressBar progress={progress} fillColor="#4ade80" />
       </div>
 
-      {/* Info overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          padding: '8px 16px',
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          color: 'white',
-          borderRadius: '4px',
-          fontSize: '14px',
-          zIndex: 10,
-        }}
-      >
+      {/* Информационный оверлей */}
+      <div className="absolute top-2.5 right-2.5 px-4 py-2 bg-black/50 text-white rounded text-sm z-10">
         {eye === 'OD' ? 'OD (правый)' : 'OS (левый)'} — {completedPoints}/{totalPoints}
       </div>
 
-      {/* Pause hint */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0,0,0,0.3)',
-          color: 'rgba(255,255,255,0.5)',
-          borderRadius: '4px',
-          fontSize: '12px',
-          zIndex: 10,
-        }}
-      >
+      {/* Подсказка паузы */}
+      <div className="absolute top-2.5 left-2.5 px-2 py-1 bg-black/30 text-white/50 rounded text-xs z-10">
         ESC — пауза
       </div>
 
-      {/* Fixation cross */}
+      {/* Крестик фиксации */}
       <FixationCross size={24} color="#000" thickness={2} />
 
-      {/* Stimulus */}
+      {/* Стимул */}
       <Stimulus
         x={stimulusX}
         y={stimulusY}
@@ -198,19 +152,8 @@ export function TestScreen({
         visible={showStimulus}
       />
 
-      {/* Instructions at bottom */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          color: 'rgba(0,0,0,0.4)',
-          fontSize: '14px',
-          textAlign: 'center',
-          zIndex: 10,
-        }}
-      >
+      {/* Инструкция внизу */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-black/40 text-sm text-center z-10">
         Смотрите на крестик. Нажмите пробел или кликните, когда увидите вспышку.
       </div>
     </div>

@@ -1,12 +1,14 @@
-
 interface ProgressBarProps {
-  progress: number;  // 0-100
+  progress: number; // 0-100
   height?: number;
   backgroundColor?: string;
   fillColor?: string;
   showLabel?: boolean;
 }
 
+/**
+ * Полоса прогресса с анимацией
+ */
 export function ProgressBar({
   progress,
   height = 4,
@@ -17,34 +19,25 @@ export function ProgressBar({
   const clampedProgress = Math.max(0, Math.min(100, progress));
 
   return (
-    <div style={{ width: '100%' }}>
+    <div className="w-full">
       <div
+        className="w-full overflow-hidden"
         style={{
-          width: '100%',
           height,
           backgroundColor,
           borderRadius: height / 2,
-          overflow: 'hidden',
         }}
       >
         <div
+          className="h-full transition-[width] duration-300 ease-out"
           style={{
             width: `${clampedProgress}%`,
-            height: '100%',
             backgroundColor: fillColor,
-            transition: 'width 0.3s ease-out',
           }}
         />
       </div>
       {showLabel && (
-        <div
-          style={{
-            textAlign: 'center',
-            marginTop: '4px',
-            fontSize: '12px',
-            color: 'rgba(255,255,255,0.7)',
-          }}
-        >
+        <div className="text-center mt-1 text-xs text-white/70">
           {Math.round(clampedProgress)}%
         </div>
       )}

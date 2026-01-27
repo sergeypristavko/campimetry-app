@@ -1,3 +1,8 @@
+/**
+ * Хук для управления полноэкранным режимом
+ * Поддерживает различные браузерные API с вендорными префиксами
+ */
+
 import { useState, useEffect, useCallback, RefObject } from 'react';
 
 interface UseFullscreenReturn {
@@ -11,16 +16,16 @@ interface UseFullscreenReturn {
 export function useFullscreen(elementRef?: RefObject<HTMLElement | null>): UseFullscreenReturn {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Check if fullscreen is supported
+  // Проверяем поддержку полноэкранного режима
   const isSupported = Boolean(
     typeof document !== 'undefined' &&
-    (document.fullscreenEnabled ||
-      (document as unknown as { webkitFullscreenEnabled?: boolean }).webkitFullscreenEnabled ||
-      (document as unknown as { mozFullScreenEnabled?: boolean }).mozFullScreenEnabled ||
-      (document as unknown as { msFullscreenEnabled?: boolean }).msFullscreenEnabled)
+      (document.fullscreenEnabled ||
+        (document as unknown as { webkitFullscreenEnabled?: boolean }).webkitFullscreenEnabled ||
+        (document as unknown as { mozFullScreenEnabled?: boolean }).mozFullScreenEnabled ||
+        (document as unknown as { msFullscreenEnabled?: boolean }).msFullscreenEnabled)
   );
 
-  // Update state when fullscreen changes
+  // Обновляем состояние при изменении полноэкранного режима
   useEffect(() => {
     const handleFullscreenChange = () => {
       const fullscreenElement =
@@ -45,40 +50,66 @@ export function useFullscreen(elementRef?: RefObject<HTMLElement | null>): UseFu
     };
   }, []);
 
+  // Входим в полноэкранный режим
   const enterFullscreen = useCallback(async () => {
     const element = elementRef?.current || document.documentElement;
 
     try {
       if (element.requestFullscreen) {
         await element.requestFullscreen();
-      } else if ((element as unknown as { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen) {
-        await (element as unknown as { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen();
-      } else if ((element as unknown as { mozRequestFullScreen?: () => Promise<void> }).mozRequestFullScreen) {
-        await (element as unknown as { mozRequestFullScreen: () => Promise<void> }).mozRequestFullScreen();
-      } else if ((element as unknown as { msRequestFullscreen?: () => Promise<void> }).msRequestFullscreen) {
-        await (element as unknown as { msRequestFullscreen: () => Promise<void> }).msRequestFullscreen();
+      } else if (
+        (element as unknown as { webkitRequestFullscreen?: () => Promise<void> })
+          .webkitRequestFullscreen
+      ) {
+        await (
+          element as unknown as { webkitRequestFullscreen: () => Promise<void> }
+        ).webkitRequestFullscreen();
+      } else if (
+        (element as unknown as { mozRequestFullScreen?: () => Promise<void> }).mozRequestFullScreen
+      ) {
+        await (
+          element as unknown as { mozRequestFullScreen: () => Promise<void> }
+        ).mozRequestFullScreen();
+      } else if (
+        (element as unknown as { msRequestFullscreen?: () => Promise<void> }).msRequestFullscreen
+      ) {
+        await (
+          element as unknown as { msRequestFullscreen: () => Promise<void> }
+        ).msRequestFullscreen();
       }
-    } catch (err) {
-      console.error('Failed to enter fullscreen:', err);
+    } catch {
+      // Игнорируем ошибки входа в полноэкранный режим
     }
   }, [elementRef]);
 
+  // Выходим из полноэкранного режима
   const exitFullscreen = useCallback(async () => {
     try {
       if (document.exitFullscreen) {
         await document.exitFullscreen();
-      } else if ((document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen) {
-        await (document as unknown as { webkitExitFullscreen: () => Promise<void> }).webkitExitFullscreen();
-      } else if ((document as unknown as { mozCancelFullScreen?: () => Promise<void> }).mozCancelFullScreen) {
-        await (document as unknown as { mozCancelFullScreen: () => Promise<void> }).mozCancelFullScreen();
-      } else if ((document as unknown as { msExitFullscreen?: () => Promise<void> }).msExitFullscreen) {
+      } else if (
+        (document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen
+      ) {
+        await (
+          document as unknown as { webkitExitFullscreen: () => Promise<void> }
+        ).webkitExitFullscreen();
+      } else if (
+        (document as unknown as { mozCancelFullScreen?: () => Promise<void> }).mozCancelFullScreen
+      ) {
+        await (
+          document as unknown as { mozCancelFullScreen: () => Promise<void> }
+        ).mozCancelFullScreen();
+      } else if (
+        (document as unknown as { msExitFullscreen?: () => Promise<void> }).msExitFullscreen
+      ) {
         await (document as unknown as { msExitFullscreen: () => Promise<void> }).msExitFullscreen();
       }
-    } catch (err) {
-      console.error('Failed to exit fullscreen:', err);
+    } catch {
+      // Игнорируем ошибки выхода из полноэкранного режима
     }
   }, []);
 
+  // Переключаем полноэкранный режим
   const toggleFullscreen = useCallback(async () => {
     if (isFullscreen) {
       await exitFullscreen();

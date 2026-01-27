@@ -1,34 +1,39 @@
+/**
+ * Экспорт результатов теста в PDF
+ */
+
 import { jsPDF } from 'jspdf';
 import { TestSession } from '../types';
 import { getPattern } from './gridPatterns';
-import {
-  interpretMD,
-  interpretPSD,
-  interpretVFI,
-  formatReliabilityPercent,
-} from './statistics';
+import { interpretMD, interpretPSD, interpretVFI, formatReliabilityPercent } from './statistics';
 
-// Get color for threshold value
+/**
+ * Возвращает цвет для значения порога
+ */
 function getThresholdColor(threshold: number): [number, number, number] {
-  if (threshold >= 30) return [0, 128, 0];      // green
-  if (threshold >= 25) return [144, 238, 144];  // light green
-  if (threshold >= 20) return [255, 255, 0];    // yellow
-  if (threshold >= 15) return [255, 165, 0];    // orange
-  if (threshold >= 10) return [255, 99, 71];    // red-orange
-  if (threshold >= 5) return [255, 0, 0];       // red
-  return [139, 0, 0];                            // dark red
+  if (threshold >= 30) return [0, 128, 0]; // зелёный
+  if (threshold >= 25) return [144, 238, 144]; // светло-зелёный
+  if (threshold >= 20) return [255, 255, 0]; // жёлтый
+  if (threshold >= 15) return [255, 165, 0]; // оранжевый
+  if (threshold >= 10) return [255, 99, 71]; // красно-оранжевый
+  if (threshold >= 5) return [255, 0, 0]; // красный
+  return [139, 0, 0]; // тёмно-красный
 }
 
-// Get color for deviation value
+/**
+ * Возвращает цвет для значения отклонения
+ */
 function getDeviationColor(deviation: number): [number, number, number] {
-  if (deviation >= -2) return [200, 200, 200];   // normal - gray
-  if (deviation >= -6) return [255, 255, 150];   // mild - yellow
-  if (deviation >= -12) return [255, 200, 100];  // moderate - orange
-  if (deviation >= -20) return [255, 100, 100];  // severe - red
-  return [139, 0, 0];                             // very severe - dark red
+  if (deviation >= -2) return [200, 200, 200]; // норма - серый
+  if (deviation >= -6) return [255, 255, 150]; // лёгкое - жёлтый
+  if (deviation >= -12) return [255, 200, 100]; // умеренное - оранжевый
+  if (deviation >= -20) return [255, 100, 100]; // выраженное - красный
+  return [139, 0, 0]; // тяжёлое - тёмно-красный
 }
 
-// Draw sensitivity map on PDF
+/**
+ * Рисует карту чувствительности на PDF
+ */
 function drawSensitivityMap(
   doc: jsPDF,
   session: TestSession,
@@ -40,7 +45,7 @@ function drawSensitivityMap(
   const pattern = getPattern(session.pattern);
   const resultsMap = new Map(session.results.map(r => [r.pointId, r]));
 
-  // Get pattern bounds
+  // Определяем границы паттерна
   let maxCoord = 24;
   if (session.pattern === '10-2') maxCoord = 10;
   if (session.pattern === '30-2') maxCoord = 30;
@@ -49,11 +54,11 @@ function drawSensitivityMap(
   const centerX = x + size / 2;
   const centerY = y + size / 2;
 
-  // Draw background
+  // Рисуем фон
   doc.setFillColor(240, 240, 240);
   doc.rect(x, y, size, size, 'F');
 
-  // Draw grid lines
+  // Рисуем линии сетки
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.1);
   for (let i = -maxCoord; i <= maxCoord; i += 6) {
@@ -63,17 +68,17 @@ function drawSensitivityMap(
     doc.line(x, py, x + size, py);
   }
 
-  // Draw axes
+  // Рисуем оси
   doc.setDrawColor(150, 150, 150);
   doc.setLineWidth(0.3);
   doc.line(centerX, y, centerX, y + size);
   doc.line(x, centerY, x + size, centerY);
 
-  // Draw fixation point
+  // Рисуем точку фиксации
   doc.setFillColor(0, 0, 0);
   doc.circle(centerX, centerY, 1.5, 'F');
 
-  // Draw points
+  // Рисуем точки
   pattern.forEach(point => {
     const result = resultsMap.get(point.id);
     if (!result) return;
@@ -82,21 +87,19 @@ function drawSensitivityMap(
     const py = centerY - point.y * scale;
 
     const value = showThresholds ? result.threshold : result.totalDeviation;
-    const color = showThresholds
-      ? getThresholdColor(value)
-      : getDeviationColor(value);
+    const color = showThresholds ? getThresholdColor(value) : getDeviationColor(value);
 
     doc.setFillColor(color[0], color[1], color[2]);
     doc.circle(px, py, 3, 'F');
 
-    // Draw value text
+    // Рисуем значение
     doc.setFontSize(5);
     doc.setTextColor(0, 0, 0);
     const text = Math.round(value).toString();
     doc.text(text, px, py + 1.5, { align: 'center' });
   });
 
-  // Draw blind spot marker for the tested eye
+  // Рисуем маркер слепого пятна для тестируемого глаза
   const blindSpotX = session.eye === 'OD' ? 15 : -15;
   const bsX = centerX + blindSpotX * scale;
   const bsY = centerY + 1.5 * scale;
@@ -105,13 +108,10 @@ function drawSensitivityMap(
   doc.circle(bsX, bsY, 4, 'S');
 }
 
-// Draw color legend
-function drawLegend(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  showThresholds: boolean
-) {
+/**
+ * Рисует легенду цветов
+ */
+function drawLegend(doc: jsPDF, x: number, y: number, showThresholds: boolean) {
   doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
   doc.text(showThresholds ? 'dB' : 'dB', x, y);
@@ -141,6 +141,9 @@ function drawLegend(
   });
 }
 
+/**
+ * Экспортирует сессию в PDF-файл
+ */
 export function exportSessionToPDF(session: TestSession): void {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -152,19 +155,19 @@ export function exportSessionToPDF(session: TestSession): void {
   const margin = 15;
   let currentY = margin;
 
-  // Title
+  // Заголовок
   doc.setFontSize(18);
   doc.setTextColor(0, 0, 0);
   doc.text('Campimetry Test Results', pageWidth / 2, currentY, { align: 'center' });
   currentY += 10;
 
-  // Subtitle
+  // Подзаголовок
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   doc.text('Visual Field Examination Report', pageWidth / 2, currentY, { align: 'center' });
   currentY += 15;
 
-  // Test info section
+  // Секция информации о тесте
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
   doc.text('Test Information', margin, currentY);
@@ -210,7 +213,7 @@ export function exportSessionToPDF(session: TestSession): void {
   }
   currentY += 12;
 
-  // Statistics section
+  // Секция статистики
   doc.setFontSize(12);
   doc.text('Global Indices', margin, currentY);
   currentY += 2;
@@ -221,7 +224,8 @@ export function exportSessionToPDF(session: TestSession): void {
 
   // MD
   doc.setFontSize(10);
-  const mdColor = statistics.MD >= -2 ? [0, 128, 0] : statistics.MD >= -6 ? [200, 150, 0] : [200, 0, 0];
+  const mdColor =
+    statistics.MD >= -2 ? [0, 128, 0] : statistics.MD >= -6 ? [200, 150, 0] : [200, 0, 0];
   doc.setTextColor(0, 0, 0);
   doc.text('MD (Mean Deviation):', col1, currentY);
   doc.setTextColor(mdColor[0], mdColor[1], mdColor[2]);
@@ -233,7 +237,8 @@ export function exportSessionToPDF(session: TestSession): void {
 
   // PSD
   doc.setFontSize(10);
-  const psdColor = statistics.PSD <= 2 ? [0, 128, 0] : statistics.PSD <= 4 ? [200, 150, 0] : [200, 0, 0];
+  const psdColor =
+    statistics.PSD <= 2 ? [0, 128, 0] : statistics.PSD <= 4 ? [200, 150, 0] : [200, 0, 0];
   doc.setTextColor(0, 0, 0);
   doc.text('PSD (Pattern Std Dev):', col1, currentY);
   doc.setTextColor(psdColor[0], psdColor[1], psdColor[2]);
@@ -245,7 +250,8 @@ export function exportSessionToPDF(session: TestSession): void {
 
   // VFI
   doc.setFontSize(10);
-  const vfiColor = statistics.VFI >= 95 ? [0, 128, 0] : statistics.VFI >= 80 ? [200, 150, 0] : [200, 0, 0];
+  const vfiColor =
+    statistics.VFI >= 95 ? [0, 128, 0] : statistics.VFI >= 80 ? [200, 150, 0] : [200, 0, 0];
   doc.setTextColor(0, 0, 0);
   doc.text('VFI (Visual Field Index):', col1, currentY);
   doc.setTextColor(vfiColor[0], vfiColor[1], vfiColor[2]);
@@ -262,7 +268,7 @@ export function exportSessionToPDF(session: TestSession): void {
     doc.text('GHT:', col1, currentY);
     const ghtText = {
       'within normal': 'Within Normal Limits',
-      'borderline': 'Borderline',
+      borderline: 'Borderline',
       'outside normal': 'Outside Normal Limits',
       'general reduction': 'General Reduction of Sensitivity',
       'abnormally high': 'Abnormally High Sensitivity',
@@ -271,7 +277,7 @@ export function exportSessionToPDF(session: TestSession): void {
   }
   currentY += 12;
 
-  // Reliability section
+  // Секция надёжности
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
   doc.text('Reliability Indices', margin, currentY);
@@ -306,14 +312,14 @@ export function exportSessionToPDF(session: TestSession): void {
   );
   currentY += 15;
 
-  // Visual Field Maps
+  // Карты поля зрения
   doc.setFontSize(12);
   doc.text('Visual Field Maps', margin, currentY);
   currentY += 2;
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 8;
 
-  // Draw sensitivity map (thresholds)
+  // Рисуем карту чувствительности (пороги)
   const mapSize = 70;
   doc.setFontSize(9);
   doc.text('Threshold (dB)', margin + mapSize / 2, currentY, { align: 'center' });
@@ -321,7 +327,7 @@ export function exportSessionToPDF(session: TestSession): void {
   drawSensitivityMap(doc, session, margin, currentY, mapSize, true);
   drawLegend(doc, margin + mapSize + 5, currentY, true);
 
-  // Draw deviation map
+  // Рисуем карту отклонений
   const deviationMapX = pageWidth / 2 + 5;
   doc.text('Total Deviation (dB)', deviationMapX + mapSize / 2, currentY - 3, { align: 'center' });
   drawSensitivityMap(doc, session, deviationMapX, currentY, mapSize, false);
@@ -329,7 +335,7 @@ export function exportSessionToPDF(session: TestSession): void {
 
   currentY += mapSize + 15;
 
-  // Footer
+  // Футер
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.text(
@@ -339,7 +345,7 @@ export function exportSessionToPDF(session: TestSession): void {
     { align: 'center' }
   );
 
-  // Save
+  // Сохраняем
   const filename = `campimetry_${session.eye}_${session.date.split('T')[0]}.pdf`;
   doc.save(filename);
 }

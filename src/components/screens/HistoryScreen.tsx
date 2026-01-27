@@ -4,6 +4,15 @@ import { Card } from '../ui/Card';
 import { SensitivityMap } from '../ui/SensitivityMap';
 import { Screen, TestSession } from '../../types';
 import { exportSession, exportAllSessions } from '../../hooks/useStorage';
+import {
+  formatDuration,
+  formatDate,
+  formatTime,
+  formatFullDate,
+  getMDColor,
+  getVFIColor,
+  formatMD,
+} from '../../utils/formatting';
 
 interface HistoryScreenProps {
   sessions: TestSession[];
@@ -12,6 +21,9 @@ interface HistoryScreenProps {
   onClearAll: () => void;
 }
 
+/**
+ * Экран истории тестов
+ */
 export function HistoryScreen({
   sessions,
   onNavigate,
@@ -40,87 +52,52 @@ export function HistoryScreen({
     }
   };
 
+  // Детальный просмотр сессии
   if (selectedSession) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: '#1a1a2e',
-          color: '#eee',
-          padding: '40px',
-          fontFamily: 'system-ui, sans-serif',
-        }}
-      >
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <Button
-            variant="ghost"
-            onClick={() => setSelectedSession(null)}
-            style={{ marginBottom: '20px' }}
-          >
+      <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+        <div className="max-w-[800px] mx-auto">
+          <Button variant="ghost" onClick={() => setSelectedSession(null)} className="mb-5">
             &larr; Назад к списку
           </Button>
 
-          <h1 style={{ marginBottom: '24px' }}>
-            {selectedSession.eye} — {new Date(selectedSession.date).toLocaleDateString('ru-RU')}
+          <h1 className="mb-6 text-2xl font-bold">
+            {selectedSession.eye} — {formatDate(selectedSession.date)}
           </h1>
 
-          {/* Statistics */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '12px',
-              marginBottom: '24px',
-            }}
-          >
-            <Card style={{ textAlign: 'center', marginBottom: 0, padding: '16px' }}>
-              <div style={{ fontSize: '11px', opacity: 0.6 }}>Паттерн</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{selectedSession.pattern}</div>
+          {/* Статистика */}
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            <Card className="text-center !mb-0 !p-4">
+              <div className="text-[11px] opacity-60">Паттерн</div>
+              <div className="text-xl font-bold">{selectedSession.pattern}</div>
             </Card>
-            <Card style={{ textAlign: 'center', marginBottom: 0, padding: '16px' }}>
-              <div style={{ fontSize: '11px', opacity: 0.6 }}>MD</div>
+            <Card className="text-center !mb-0 !p-4">
+              <div className="text-[11px] opacity-60">MD</div>
               <div
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  color:
-                    selectedSession.statistics.MD >= -2
-                      ? '#4ade80'
-                      : selectedSession.statistics.MD >= -6
-                      ? '#facc15'
-                      : '#f87171',
-                }}
+                className="text-xl font-bold"
+                style={{ color: getMDColor(selectedSession.statistics.MD) }}
               >
-                {selectedSession.statistics.MD > 0 ? '+' : ''}
-                {selectedSession.statistics.MD.toFixed(1)}
+                {formatMD(selectedSession.statistics.MD, 1)}
               </div>
             </Card>
-            <Card style={{ textAlign: 'center', marginBottom: 0, padding: '16px' }}>
-              <div style={{ fontSize: '11px', opacity: 0.6 }}>PSD</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+            <Card className="text-center !mb-0 !p-4">
+              <div className="text-[11px] opacity-60">PSD</div>
+              <div className="text-xl font-bold">
                 {selectedSession.statistics.PSD.toFixed(1)}
               </div>
             </Card>
-            <Card style={{ textAlign: 'center', marginBottom: 0, padding: '16px' }}>
-              <div style={{ fontSize: '11px', opacity: 0.6 }}>VFI</div>
+            <Card className="text-center !mb-0 !p-4">
+              <div className="text-[11px] opacity-60">VFI</div>
               <div
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  color:
-                    selectedSession.statistics.VFI >= 95
-                      ? '#4ade80'
-                      : selectedSession.statistics.VFI >= 80
-                      ? '#facc15'
-                      : '#f87171',
-                }}
+                className="text-xl font-bold"
+                style={{ color: getVFIColor(selectedSession.statistics.VFI) }}
               >
                 {selectedSession.statistics.VFI}%
               </div>
             </Card>
           </div>
 
-          {/* Map */}
+          {/* Карта */}
           <Card title="Карта поля зрения">
             <SensitivityMap
               results={selectedSession.results}
@@ -130,18 +107,11 @@ export function HistoryScreen({
             />
           </Card>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <Button
-              variant="secondary"
-              fullWidth
-              onClick={() => exportSession(selectedSession)}
-            >
+          <div className="flex gap-3">
+            <Button variant="secondary" fullWidth onClick={() => exportSession(selectedSession)}>
               Экспорт JSON
             </Button>
-            <Button
-              variant="danger"
-              onClick={() => handleDelete(selectedSession.id)}
-            >
+            <Button variant="danger" onClick={() => handleDelete(selectedSession.id)}>
               Удалить
             </Button>
           </div>
@@ -150,37 +120,19 @@ export function HistoryScreen({
     );
   }
 
+  // Список сессий
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: '#eee',
-        padding: '40px',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <Button variant="ghost" onClick={() => onNavigate('home')} style={{ marginBottom: '20px' }}>
+    <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+      <div className="max-w-[800px] mx-auto">
+        <Button variant="ghost" onClick={() => onNavigate('home')} className="mb-5">
           &larr; Назад
         </Button>
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '32px',
-          }}
-        >
-          <h1 style={{ margin: 0 }}>История тестов</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="m-0 text-2xl font-bold">История тестов</h1>
           {sessions.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => exportAllSessions(sessions)}
-              >
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => exportAllSessions(sessions)}>
                 Экспорт всех
               </Button>
               <Button
@@ -196,96 +148,49 @@ export function HistoryScreen({
 
         {sessions.length === 0 ? (
           <Card>
-            <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.5)' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>
-                <span role="img" aria-label="empty">
-                  -
-                </span>
-              </div>
+            <div className="text-center p-10 text-white/50">
+              <div className="text-5xl mb-4">-</div>
               <div>История тестов пуста</div>
-              <Button
-                variant="primary"
-                onClick={() => onNavigate('settings')}
-                style={{ marginTop: '24px' }}
-              >
+              <Button variant="primary" onClick={() => onNavigate('settings')} className="mt-6">
                 Начать первый тест
               </Button>
             </div>
           </Card>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="flex flex-col gap-3">
             {sessions.map(session => {
-              const date = new Date(session.date);
-              const duration = Math.round(session.duration / 1000);
-              const minutes = Math.floor(duration / 60);
-              const seconds = duration % 60;
+              const duration = formatDuration(session.duration);
 
               return (
                 <Card
                   key={session.id}
-                  style={{
-                    marginBottom: 0,
-                    cursor: 'pointer',
-                    transition: 'transform 0.1s',
-                  }}
+                  className="!mb-0 cursor-pointer transition-transform hover:scale-[1.01]"
                 >
                   <div
                     onClick={() => setSelectedSession(session)}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '60px 1fr auto',
-                      gap: '16px',
-                      alignItems: 'center',
-                    }}
+                    className="grid grid-cols-[60px_1fr_auto] gap-4 items-center"
                   >
-                    <div
-                      style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '8px',
-                        backgroundColor: '#0f3460',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{session.eye}</div>
-                      <div style={{ fontSize: '10px', opacity: 0.6 }}>{session.pattern}</div>
+                    <div className="w-[60px] h-[60px] rounded-lg bg-secondary flex flex-col items-center justify-center">
+                      <div className="text-2xl font-bold">{session.eye}</div>
+                      <div className="text-[10px] opacity-60">{session.pattern}</div>
                     </div>
 
                     <div>
-                      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                        {date.toLocaleDateString('ru-RU', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
-                        {date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} •{' '}
-                        {minutes}:{seconds.toString().padStart(2, '0')} мин
+                      <div className="font-bold mb-1">{formatFullDate(session.date)}</div>
+                      <div className="text-xs text-white/60">
+                        {formatTime(session.date)} • {duration} мин
                         {session.patientAge && ` • Возраст: ${session.patientAge}`}
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="text-right">
                       <div
-                        style={{
-                          fontSize: '20px',
-                          fontWeight: 'bold',
-                          color:
-                            session.statistics.MD >= -2
-                              ? '#4ade80'
-                              : session.statistics.MD >= -6
-                              ? '#facc15'
-                              : '#f87171',
-                        }}
+                        className="text-xl font-bold"
+                        style={{ color: getMDColor(session.statistics.MD) }}
                       >
-                        MD: {session.statistics.MD > 0 ? '+' : ''}
-                        {session.statistics.MD.toFixed(1)}
+                        MD: {formatMD(session.statistics.MD, 1)}
                       </div>
-                      <div style={{ fontSize: '11px', opacity: 0.6 }}>
+                      <div className="text-[11px] opacity-60">
                         VFI: {session.statistics.VFI}%
                       </div>
                     </div>

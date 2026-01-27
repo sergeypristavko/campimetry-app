@@ -11,6 +11,9 @@ interface SettingsScreenProps {
   onStartTest: (eye: Eye, pattern: GridPattern, strategy: TestStrategy, age?: number) => void;
 }
 
+/**
+ * Экран настроек теста
+ */
 export function SettingsScreen({
   onNavigate,
   settings,
@@ -30,85 +33,61 @@ export function SettingsScreen({
     onNavigate('instruction');
   };
 
+  const eyeButtonClass = (selected: boolean) =>
+    `flex-1 p-5 text-base font-bold rounded-lg cursor-pointer transition-all text-white ${
+      selected
+        ? 'border-2 border-primary bg-primary/20'
+        : 'border-2 border-transparent bg-secondary'
+    }`;
+
+  const patternButtonClass = (selected: boolean) =>
+    `p-4 text-left rounded-lg cursor-pointer transition-all text-white ${
+      selected
+        ? 'border-2 border-primary bg-primary/20'
+        : 'border-2 border-transparent bg-secondary'
+    }`;
+
+  const strategyButtonClass = (selected: boolean) =>
+    `flex-1 p-4 text-center rounded-lg cursor-pointer text-white ${
+      selected
+        ? 'border-2 border-primary bg-primary/20'
+        : 'border-2 border-transparent bg-secondary'
+    }`;
+
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: '#eee',
-        padding: '40px',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <Button variant="ghost" onClick={() => onNavigate('home')} style={{ marginBottom: '20px' }}>
+    <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+      <div className="max-w-xl mx-auto">
+        <Button variant="ghost" onClick={() => onNavigate('home')} className="mb-5">
           &larr; Назад
         </Button>
 
-        <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Настройки теста</h1>
+        <h1 className="text-center mb-8 text-2xl font-bold">Настройки теста</h1>
 
         <Card title="Тестируемый глаз">
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setEye('OD')}
-              style={{
-                flex: 1,
-                padding: '20px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                border: eye === 'OD' ? '2px solid #e94560' : '2px solid transparent',
-                borderRadius: '8px',
-                backgroundColor: eye === 'OD' ? 'rgba(233, 69, 96, 0.2)' : '#0f3460',
-                color: '#fff',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <div style={{ fontSize: '24px', marginBottom: '4px' }}>OD</div>
-              <div style={{ fontSize: '12px', opacity: 0.7 }}>Правый глаз</div>
+          <div className="flex gap-3">
+            <button onClick={() => setEye('OD')} className={eyeButtonClass(eye === 'OD')}>
+              <div className="text-2xl mb-1">OD</div>
+              <div className="text-xs opacity-70">Правый глаз</div>
             </button>
-            <button
-              onClick={() => setEye('OS')}
-              style={{
-                flex: 1,
-                padding: '20px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                border: eye === 'OS' ? '2px solid #e94560' : '2px solid transparent',
-                borderRadius: '8px',
-                backgroundColor: eye === 'OS' ? 'rgba(233, 69, 96, 0.2)' : '#0f3460',
-                color: '#fff',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <div style={{ fontSize: '24px', marginBottom: '4px' }}>OS</div>
-              <div style={{ fontSize: '12px', opacity: 0.7 }}>Левый глаз</div>
+            <button onClick={() => setEye('OS')} className={eyeButtonClass(eye === 'OS')}>
+              <div className="text-2xl mb-1">OS</div>
+              <div className="text-xs opacity-70">Левый глаз</div>
             </button>
           </div>
         </Card>
 
         <Card title="Паттерн тестирования">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-2">
             {(['24-2', '10-2', '30-2'] as GridPattern[]).map(p => {
               const info = getPatternInfo(p);
               return (
                 <button
                   key={p}
                   onClick={() => setPattern(p)}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    border: pattern === p ? '2px solid #e94560' : '2px solid transparent',
-                    borderRadius: '8px',
-                    backgroundColor: pattern === p ? 'rgba(233, 69, 96, 0.2)' : '#0f3460',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
+                  className={patternButtonClass(pattern === p)}
                 >
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{p}</div>
-                  <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                  <div className="font-bold mb-1">{p}</div>
+                  <div className="text-xs opacity-70">
                     {info.description} ({info.points} точек)
                   </div>
                 </button>
@@ -118,38 +97,20 @@ export function SettingsScreen({
         </Card>
 
         <Card title="Стратегия">
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="flex gap-3">
             <button
               onClick={() => setStrategy('threshold')}
-              style={{
-                flex: 1,
-                padding: '16px',
-                textAlign: 'center',
-                border: strategy === 'threshold' ? '2px solid #e94560' : '2px solid transparent',
-                borderRadius: '8px',
-                backgroundColor: strategy === 'threshold' ? 'rgba(233, 69, 96, 0.2)' : '#0f3460',
-                color: '#fff',
-                cursor: 'pointer',
-              }}
+              className={strategyButtonClass(strategy === 'threshold')}
             >
-              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Пороговая</div>
-              <div style={{ fontSize: '11px', opacity: 0.7 }}>Точное измерение порога</div>
+              <div className="font-bold mb-1">Пороговая</div>
+              <div className="text-[11px] opacity-70">Точное измерение порога</div>
             </button>
             <button
               onClick={() => setStrategy('suprathreshold')}
-              style={{
-                flex: 1,
-                padding: '16px',
-                textAlign: 'center',
-                border: strategy === 'suprathreshold' ? '2px solid #e94560' : '2px solid transparent',
-                borderRadius: '8px',
-                backgroundColor: strategy === 'suprathreshold' ? 'rgba(233, 69, 96, 0.2)' : '#0f3460',
-                color: '#fff',
-                cursor: 'pointer',
-              }}
+              className={strategyButtonClass(strategy === 'suprathreshold')}
             >
-              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Надпороговая</div>
-              <div style={{ fontSize: '11px', opacity: 0.7 }}>Быстрый скрининг</div>
+              <div className="font-bold mb-1">Надпороговая</div>
+              <div className="text-[11px] opacity-70">Быстрый скрининг</div>
             </button>
           </div>
         </Card>
@@ -162,27 +123,17 @@ export function SettingsScreen({
             placeholder="Возраст в годах"
             value={patientAge}
             onChange={e => setPatientAge(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '16px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#0f3460',
-              color: '#fff',
-            }}
+            className="w-full p-3 text-base rounded-lg border-none bg-secondary text-white"
           />
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '8px' }}>
+          <div className="text-xs text-white/50 mt-2">
             Используется для расчёта возрастных норм
           </div>
         </Card>
 
         <Card title="Параметры стимула">
-          <div style={{ display: 'grid', gap: '16px' }}>
+          <div className="grid gap-4">
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>
-                Размер стимула (Goldmann):
-              </label>
+              <label className="block mb-2 text-sm">Размер стимула (Goldmann):</label>
               <select
                 value={settings.stimulusSizeGoldmann}
                 onChange={e =>
@@ -190,15 +141,7 @@ export function SettingsScreen({
                     stimulusSizeGoldmann: e.target.value as AppSettings['stimulusSizeGoldmann'],
                   })
                 }
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: '#0f3460',
-                  color: '#eee',
-                }}
+                className="w-full p-2.5 text-base rounded-md border-none bg-secondary text-gray-200"
               >
                 <option value="I">I (0.108°)</option>
                 <option value="II">II (0.217°)</option>
@@ -209,7 +152,7 @@ export function SettingsScreen({
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>
+              <label className="block mb-2 text-sm">
                 Длительность стимула: {settings.stimulusDuration} мс
               </label>
               <input
@@ -219,12 +162,12 @@ export function SettingsScreen({
                 step="50"
                 value={settings.stimulusDuration}
                 onChange={e => updateSettings({ stimulusDuration: Number(e.target.value) })}
-                style={{ width: '100%' }}
+                className="w-full"
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>
+              <label className="block mb-2 text-sm">
                 Время ожидания ответа: {settings.responseTimeout} мс
               </label>
               <input
@@ -234,25 +177,17 @@ export function SettingsScreen({
                 step="100"
                 value={settings.responseTimeout}
                 onChange={e => updateSettings({ responseTimeout: Number(e.target.value) })}
-                style={{ width: '100%' }}
+                className="w-full"
               />
             </div>
           </div>
         </Card>
 
-        <div
-          style={{
-            padding: '16px',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontSize: '14px',
-          }}
-        >
-          <div style={{ marginBottom: '8px' }}>
+        <div className="p-4 bg-white/5 rounded-lg mb-5 text-sm">
+          <div className="mb-2">
             <strong>Выбранные параметры:</strong>
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <div className="text-white/70">
             {eye === 'OD' ? 'Правый' : 'Левый'} глаз, паттерн {pattern}, {patternInfo.points} точек
           </div>
         </div>

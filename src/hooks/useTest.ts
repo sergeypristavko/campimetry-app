@@ -9,13 +9,8 @@ import {
   TestStrategy,
   StaircaseState,
   AppSettings,
-  GoldmannSizes,
 } from '../types';
-import {
-  getPattern,
-  markBlindSpotPoints,
-  shufflePoints,
-} from '../utils/gridPatterns';
+import { getPattern, markBlindSpotPoints, shufflePoints } from '../utils/gridPatterns';
 import {
   initializeStaircase,
   processResponse,
@@ -25,66 +20,8 @@ import {
 } from '../utils/algorithms';
 import { calculateStatistics } from '../utils/statistics';
 import { generateSessionId } from './useStorage';
-
-// Check if stimulus position overlaps with UI elements
-// Returns true if the point should be skipped
-function isInUIZone(
-  stimulusX: number,
-  stimulusY: number,
-  stimulusSize: number
-): boolean {
-  // Get screen dimensions
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-  const halfWidth = screenWidth / 2;
-  const halfHeight = screenHeight / 2;
-
-  // Convert stimulus position to screen coordinates (from center)
-  const screenX = halfWidth + stimulusX;
-  const screenY = halfHeight + stimulusY;
-
-  // UI zones (with padding for stimulus size)
-  const padding = stimulusSize + 20;
-
-  // Top-left: "ESC - пауза" (~100x30px at top:10, left:10)
-  const topLeftZone = {
-    left: 0,
-    top: 0,
-    right: 120 + padding,
-    bottom: 50 + padding,
-  };
-
-  // Top-right: "OD (правый) - X/Y" (~180x40px at top:10, right:10)
-  const topRightZone = {
-    left: screenWidth - 200 - padding,
-    top: 0,
-    right: screenWidth,
-    bottom: 50 + padding,
-  };
-
-  // Progress bar at very top
-  const progressBarZone = {
-    left: 0,
-    top: 0,
-    right: screenWidth,
-    bottom: 6 + padding,
-  };
-
-  // Bottom center: instructions
-  const bottomZone = {
-    left: halfWidth - 300,
-    top: screenHeight - 60 - padding,
-    right: halfWidth + 300,
-    bottom: screenHeight,
-  };
-
-  // Check if stimulus center is in any zone
-  const inZone = (zone: { left: number; top: number; right: number; bottom: number }) =>
-    screenX >= zone.left && screenX <= zone.right &&
-    screenY >= zone.top && screenY <= zone.bottom;
-
-  return inZone(topLeftZone) || inZone(topRightZone) || inZone(progressBarZone) || inZone(bottomZone);
-}
+import { isInUIZone } from '../utils/uiZoneDetection';
+import { calculateStimulusSizePx, calculateStimulusPosition } from '../utils/stimulusCalculations';
 
 interface UseTestProps {
   eye: Eye;
@@ -116,6 +53,19 @@ interface UseTestReturn {
   stimulusY: number;
 }
 
+const INITIAL_RELIABILITY: ReliabilityIndices = {
+  fixationLosses: 0,
+  fixationLossesTotal: 0,
+  falsePositives: 0,
+  falsePositivesTotal: 0,
+  falseNegatives: 0,
+  falseNegativesTotal: 0,
+};
+
+/**
+ * Хук для управления процессом тестирования поля зрения
+ * Реализует алгоритм staircase для пороговой стратегии
+ */
 export function useTest({
   eye,
   pattern,
@@ -125,7 +75,7 @@ export function useTest({
   patientAge,
   onComplete,
 }: UseTestProps): UseTestReturn {
-  // State for UI updates
+  // Состояние для обновления UI
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showStimulus, setShowStimulus] = useState(false);
@@ -133,16 +83,9 @@ export function useTest({
   const [completedPoints, setCompletedPoints] = useState(0);
   const [testPoints, setTestPoints] = useState<TestPoint[]>([]);
   const [currentIntensity, setCurrentIntensity] = useState(24);
-  const [reliability, setReliability] = useState<ReliabilityIndices>({
-    fixationLosses: 0,
-    fixationLossesTotal: 0,
-    falsePositives: 0,
-    falsePositivesTotal: 0,
-    falseNegatives: 0,
-    falseNegativesTotal: 0,
-  });
+  const [reliability, setReliability] = useState<ReliabilityIndices>(INITIAL_RELIABILITY);
 
-  // Refs for callback access (avoid stale closures)
+  // Рефы для доступа из колбэков (избегаем stale closures)
   const testPointsRef = useRef<TestPoint[]>([]);
   const staircasesRef = useRef<Map<string, StaircaseState>>(new Map());
   const resultsRef = useRef<ThresholdResult[]>([]);
@@ -152,41 +95,44 @@ export function useTest({
   const isPausedRef = useRef(false);
   const reliabilityRef = useRef<ReliabilityIndices>(reliability);
 
-  // Timing refs
+  // Рефы для таймеров
   const stimulusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interStimulusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(0);
   const awaitingResponseRef = useRef(false);
 
-  // Function refs to avoid stale closures
+  // Реф для функции обработки ответа
   const handleResponseRef = useRef<(seen: boolean) => void>(() => {});
 
-  // Sync refs with state
-  useEffect(() => { reliabilityRef.current = reliability; }, [reliability]);
+  // Синхронизация рефов с состоянием
+  useEffect(() => {
+    reliabilityRef.current = reliability;
+  }, [reliability]);
 
-  // Current point
+  // Текущая точка
   const currentPoint = testPoints[currentPointIndex] || null;
 
-  // Calculate stimulus position
-  const stimulusX = currentPoint ? currentPoint.x * pixelsPerDegree : 0;
-  const stimulusY = currentPoint ? -currentPoint.y * pixelsPerDegree : 0;
+  // Позиция стимула
+  const stimulusPosition = currentPoint
+    ? calculateStimulusPosition(currentPoint, pixelsPerDegree)
+    : { x: 0, y: 0 };
 
-  // Calculate opacity
+  // Прозрачность стимула (на основе интенсивности)
   const stimulusOpacity = intensityToLinear(currentIntensity);
 
-  // Progress
+  // Прогресс
   const totalPoints = testPoints.length;
   const progress = totalPoints > 0 ? (completedPoints / totalPoints) * 100 : 0;
 
-  // Clear timeouts
+  // Очистка таймеров
   const clearAllTimeouts = useCallback(() => {
     if (stimulusTimeoutRef.current) clearTimeout(stimulusTimeoutRef.current);
     if (responseTimeoutRef.current) clearTimeout(responseTimeoutRef.current);
     if (interStimulusTimeoutRef.current) clearTimeout(interStimulusTimeoutRef.current);
   }, []);
 
-  // Complete test
+  // Завершение теста
   const completeTest = useCallback(() => {
     const points = testPointsRef.current;
     const results = resultsRef.current;
@@ -215,53 +161,43 @@ export function useTest({
     onComplete(session);
   }, [eye, pattern, strategy, patientAge, onComplete]);
 
-  // Show next stimulus
+  // Показ следующего стимула
   const showNextStimulus = useCallback(() => {
-    console.log('[showNextStimulus] called, isPaused:', isPausedRef.current, 'isRunning:', isRunningRef.current);
-    if (isPausedRef.current || !isRunningRef.current) {
-      console.log('[showNextStimulus] early return - paused or not running');
-      return;
-    }
+    if (isPausedRef.current || !isRunningRef.current) return;
 
     const points = testPointsRef.current;
     const idx = currentPointIndexRef.current;
-    console.log('[showNextStimulus] idx:', idx, 'total points:', points.length);
 
-    // Check if test is complete
+    // Проверка завершения теста
     if (idx >= points.length) {
-      console.log('[showNextStimulus] test complete, calling completeTest');
       completeTest();
       return;
     }
 
     const point = points[idx];
-    console.log('[showNextStimulus] point:', point?.id);
     const staircase = staircasesRef.current.get(point.id);
+
     if (!staircase) {
-      // Skip this point if staircase not found (shouldn't happen, but handle gracefully)
-      console.warn(`Staircase not found for point ${point.id}, skipping`);
+      // Пропускаем точку без staircase (не должно происходить)
       currentPointIndexRef.current += 1;
       setCurrentPointIndex(currentPointIndexRef.current);
-      // Schedule next stimulus
-      interStimulusTimeoutRef.current = setTimeout(() => {
-        showNextStimulus();
-      }, 100);
+      interStimulusTimeoutRef.current = setTimeout(showNextStimulus, 100);
       return;
     }
 
-    // Update intensity display
+    // Обновляем интенсивность
     setCurrentIntensity(staircase.currentIntensity);
 
-    // Show stimulus
+    // Показываем стимул
     setShowStimulus(true);
     awaitingResponseRef.current = true;
 
-    // Hide stimulus after duration
+    // Скрываем стимул после заданной длительности
     stimulusTimeoutRef.current = setTimeout(() => {
       setShowStimulus(false);
     }, settings.stimulusDuration);
 
-    // Timeout if no response - use ref to avoid stale closure
+    // Таймаут ожидания ответа
     responseTimeoutRef.current = setTimeout(() => {
       if (awaitingResponseRef.current) {
         handleResponseRef.current(false);
@@ -269,49 +205,63 @@ export function useTest({
     }, settings.responseTimeout);
   }, [settings.stimulusDuration, settings.responseTimeout, completeTest]);
 
-  // Handle response
-  const handleResponse = useCallback((seen: boolean) => {
-    console.log('[handleResponse] called, seen:', seen, 'awaiting:', awaitingResponseRef.current, 'isRunning:', isRunningRef.current);
-    if (!awaitingResponseRef.current || !isRunningRef.current) {
-      console.log('[handleResponse] early return - not awaiting or not running');
-      return;
-    }
+  // Обработка ответа
+  const handleResponse = useCallback(
+    (seen: boolean) => {
+      if (!awaitingResponseRef.current || !isRunningRef.current) return;
 
-    clearAllTimeouts();
-    awaitingResponseRef.current = false;
-    setShowStimulus(false);
+      clearAllTimeouts();
+      awaitingResponseRef.current = false;
+      setShowStimulus(false);
 
-    const points = testPointsRef.current;
-    const idx = currentPointIndexRef.current;
-    const point = points[idx];
-    if (!point) {
-      // No more points, schedule next (will complete test)
-      interStimulusTimeoutRef.current = setTimeout(() => {
-        showNextStimulus();
-      }, 100);
-      return;
-    }
+      const points = testPointsRef.current;
+      const idx = currentPointIndexRef.current;
+      const point = points[idx];
 
-    const staircase = staircasesRef.current.get(point.id);
-    if (!staircase) {
-      // Skip this point and move to next
-      console.warn(`Staircase not found for point ${point.id} in handleResponse, skipping`);
-      currentPointIndexRef.current += 1;
-      setCurrentPointIndex(currentPointIndexRef.current);
-      interStimulusTimeoutRef.current = setTimeout(() => {
-        showNextStimulus();
-      }, 100);
-      return;
-    }
+      if (!point) {
+        interStimulusTimeoutRef.current = setTimeout(showNextStimulus, 100);
+        return;
+      }
 
-    if (strategy === 'threshold') {
-      // Update staircase
-      const updatedStaircase = processResponse(staircase, seen);
-      staircasesRef.current.set(point.id, updatedStaircase);
+      const staircase = staircasesRef.current.get(point.id);
 
-      if (updatedStaircase.isComplete) {
-        // Point is done
-        const result = staircaseToThresholdResult(updatedStaircase, point, patientAge);
+      if (!staircase) {
+        currentPointIndexRef.current += 1;
+        setCurrentPointIndex(currentPointIndexRef.current);
+        interStimulusTimeoutRef.current = setTimeout(showNextStimulus, 100);
+        return;
+      }
+
+      if (strategy === 'threshold') {
+        // Обновляем staircase
+        const updatedStaircase = processResponse(staircase, seen);
+        staircasesRef.current.set(point.id, updatedStaircase);
+
+        if (updatedStaircase.isComplete) {
+          // Точка завершена
+          const result = staircaseToThresholdResult(updatedStaircase, point, patientAge);
+          resultsRef.current.push(result);
+
+          completedPointsRef.current += 1;
+          setCompletedPoints(completedPointsRef.current);
+
+          currentPointIndexRef.current += 1;
+          setCurrentPointIndex(currentPointIndexRef.current);
+        } else {
+          // Обновляем интенсивность для следующего предъявления
+          setCurrentIntensity(updatedStaircase.currentIntensity);
+        }
+      } else {
+        // Надпороговая стратегия
+        const threshold = seen ? getSuprathresholdIntensity(point.eccentricity, patientAge) : 0;
+        const result: ThresholdResult = {
+          pointId: point.id,
+          threshold,
+          deviation: 0,
+          totalDeviation: 0,
+          patternDeviation: 0,
+          presentations: 1,
+        };
         resultsRef.current.push(result);
 
         completedPointsRef.current += 1;
@@ -319,72 +269,48 @@ export function useTest({
 
         currentPointIndexRef.current += 1;
         setCurrentPointIndex(currentPointIndexRef.current);
-      } else {
-        // Update intensity for next presentation of same point
-        setCurrentIntensity(updatedStaircase.currentIntensity);
       }
-    } else {
-      // Suprathreshold
-      const threshold = seen ? getSuprathresholdIntensity(point.eccentricity, patientAge) : 0;
-      const result: ThresholdResult = {
-        pointId: point.id,
-        threshold,
-        deviation: 0,
-        totalDeviation: 0,
-        patternDeviation: 0,
-        presentations: 1,
-      };
-      resultsRef.current.push(result);
 
-      completedPointsRef.current += 1;
-      setCompletedPoints(completedPointsRef.current);
+      // Планируем следующий стимул с рандомной задержкой
+      interStimulusTimeoutRef.current = setTimeout(showNextStimulus, 500 + Math.random() * 500);
+    },
+    [strategy, patientAge, clearAllTimeouts, showNextStimulus]
+  );
 
-      currentPointIndexRef.current += 1;
-      setCurrentPointIndex(currentPointIndexRef.current);
-    }
-
-    // Schedule next stimulus
-    interStimulusTimeoutRef.current = setTimeout(() => {
-      showNextStimulus();
-    }, 500 + Math.random() * 500);
-  }, [strategy, patientAge, clearAllTimeouts, showNextStimulus]);
-
-  // Keep handleResponseRef in sync with handleResponse
+  // Синхронизация рефа с функцией обработки ответа
   useEffect(() => {
     handleResponseRef.current = handleResponse;
   }, [handleResponse]);
 
-  // Public record response
-  const recordResponse = useCallback((seen: boolean) => {
-    handleResponse(seen);
-  }, [handleResponse]);
+  // Публичная функция записи ответа
+  const recordResponse = useCallback(
+    (seen: boolean) => handleResponse(seen),
+    [handleResponse]
+  );
 
-  // Start test
+  // Запуск теста
   const startTest = useCallback(() => {
-    // Calculate stimulus size for UI zone filtering
-    const stimulusSizeDegrees = GoldmannSizes[settings.stimulusSizeGoldmann];
-    const stimulusSizePx = Math.max(4, Math.round(stimulusSizeDegrees * pixelsPerDegree));
+    const stimulusSizePx = calculateStimulusSizePx(settings.stimulusSizeGoldmann, pixelsPerDegree);
 
-    // Generate points
+    // Генерация точек
     let points = getPattern(pattern);
     points = markBlindSpotPoints(points, eye);
 
-    // Filter out points that would appear in UI zones
+    // Фильтрация точек, пересекающихся с UI-элементами
     points = points.filter(point => {
-      const stimulusX = point.x * pixelsPerDegree;
-      const stimulusY = -point.y * pixelsPerDegree;
-      return !isInUIZone(stimulusX, stimulusY, stimulusSizePx);
+      const pos = calculateStimulusPosition(point, pixelsPerDegree);
+      return !isInUIZone(pos.x, pos.y, stimulusSizePx);
     });
 
     points = shufflePoints(points);
 
-    // Initialize staircases
+    // Инициализация staircase для каждой точки
     const newStaircases = new Map<string, StaircaseState>();
     points.forEach(point => {
       newStaircases.set(point.id, initializeStaircase(point));
     });
 
-    // Set refs
+    // Установка рефов
     testPointsRef.current = points;
     staircasesRef.current = newStaircases;
     resultsRef.current = [];
@@ -393,47 +319,36 @@ export function useTest({
     isRunningRef.current = true;
     isPausedRef.current = false;
 
-    // Set state
+    // Установка состояния
     setTestPoints(points);
     setCurrentPointIndex(0);
     setCompletedPoints(0);
     setCurrentIntensity(24);
-    setReliability({
-      fixationLosses: 0,
-      fixationLossesTotal: 0,
-      falsePositives: 0,
-      falsePositivesTotal: 0,
-      falseNegatives: 0,
-      falseNegativesTotal: 0,
-    });
+    setReliability(INITIAL_RELIABILITY);
 
     startTimeRef.current = Date.now();
     setIsRunning(true);
     setIsPaused(false);
 
-    // Start first stimulus
-    setTimeout(() => {
-      showNextStimulus();
-    }, 1000);
+    // Запуск первого стимула с задержкой
+    setTimeout(showNextStimulus, 1000);
   }, [pattern, eye, settings.stimulusSizeGoldmann, pixelsPerDegree, showNextStimulus]);
 
-  // Pause
+  // Пауза
   const pauseTest = useCallback(() => {
     isPausedRef.current = true;
     setIsPaused(true);
     clearAllTimeouts();
   }, [clearAllTimeouts]);
 
-  // Resume
+  // Возобновление
   const resumeTest = useCallback(() => {
     isPausedRef.current = false;
     setIsPaused(false);
-    setTimeout(() => {
-      showNextStimulus();
-    }, 1000);
+    setTimeout(showNextStimulus, 1000);
   }, [showNextStimulus]);
 
-  // Abort
+  // Прерывание
   const abortTest = useCallback(() => {
     clearAllTimeouts();
     isRunningRef.current = false;
@@ -443,7 +358,7 @@ export function useTest({
     awaitingResponseRef.current = false;
   }, [clearAllTimeouts]);
 
-  // Cleanup
+  // Очистка при размонтировании
   useEffect(() => {
     return () => clearAllTimeouts();
   }, [clearAllTimeouts]);
@@ -464,7 +379,7 @@ export function useTest({
     recordResponse,
     reliability,
     stimulusOpacity,
-    stimulusX,
-    stimulusY,
+    stimulusX: stimulusPosition.x,
+    stimulusY: stimulusPosition.y,
   };
 }

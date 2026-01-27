@@ -1,15 +1,19 @@
-// Age-normal sensitivity values based on eccentricity
-// Simplified model based on published normative data
-// Values are in dB
+/**
+ * Нормативные значения чувствительности поля зрения
+ * Упрощённая модель на основе опубликованных нормативных данных
+ * Значения указаны в децибелах (dB)
+ */
 
 interface NormalValuesByEccentricity {
   [key: number]: number;
 }
 
-// Base normal sensitivity by eccentricity (for age 30)
+/**
+ * Базовая нормальная чувствительность по эксцентриситету (для возраста 30 лет)
+ */
 const baseSensitivityByEccentricity: NormalValuesByEccentricity = {
-  0: 34,   // fovea (not tested)
-  3: 32,   // near fovea
+  0: 34, // фовеа (не тестируется)
+  3: 32, // парафовеа
   5: 31,
   7: 30,
   9: 29,
@@ -23,14 +27,23 @@ const baseSensitivityByEccentricity: NormalValuesByEccentricity = {
   30: 22,
 };
 
-// Age correction factor: sensitivity decreases ~0.7 dB per decade after age 20
+/** Базовый возраст для расчёта поправки */
 const AGE_BASELINE = 30;
+
+/** Коррекция чувствительности: ~0.7 dB снижения за каждые 10 лет после 20 */
 const AGE_CORRECTION_PER_DECADE = 0.7;
 
-// Get normal sensitivity for a given eccentricity and age
+/**
+ * Возвращает нормальную чувствительность для заданного эксцентриситета и возраста
+ * @param eccentricity - Расстояние от центра в градусах
+ * @param age - Возраст пациента (опционально)
+ * @returns Нормальная чувствительность в dB
+ */
 export function getAgeNormalSensitivity(eccentricity: number, age?: number): number {
-  // Find the closest eccentricity values
-  const eccentricities = Object.keys(baseSensitivityByEccentricity).map(Number).sort((a, b) => a - b);
+  // Находим ближайшие значения эксцентриситета
+  const eccentricities = Object.keys(baseSensitivityByEccentricity)
+    .map(Number)
+    .sort((a, b) => a - b);
 
   let baseSensitivity: number;
 
@@ -39,7 +52,7 @@ export function getAgeNormalSensitivity(eccentricity: number, age?: number): num
   } else if (eccentricity >= eccentricities[eccentricities.length - 1]) {
     baseSensitivity = baseSensitivityByEccentricity[eccentricities[eccentricities.length - 1]];
   } else {
-    // Interpolate between two closest values
+    // Интерполируем между двумя ближайшими значениями
     let lowerEcc = eccentricities[0];
     let upperEcc = eccentricities[eccentricities.length - 1];
 
@@ -57,41 +70,46 @@ export function getAgeNormalSensitivity(eccentricity: number, age?: number): num
     baseSensitivity = lowerSens + (upperSens - lowerSens) * ratio;
   }
 
-  // Apply age correction
+  // Применяем возрастную коррекцию
   const patientAge = age ?? AGE_BASELINE;
   const ageCorrection = ((patientAge - AGE_BASELINE) / 10) * AGE_CORRECTION_PER_DECADE;
 
   return Math.round(baseSensitivity - ageCorrection);
 }
 
-// Get total deviation (measured - normal)
+/**
+ * Вычисляет общее отклонение (измеренное - нормальное)
+ */
 export function getTotalDeviation(measured: number, eccentricity: number, age?: number): number {
   const normal = getAgeNormalSensitivity(eccentricity, age);
   return measured - normal;
 }
 
-// Pattern deviation is calculated as total deviation minus the 85th percentile of total deviations
-// This helps identify localized defects vs generalized depression
+/**
+ * Вычисляет паттерн-отклонения
+ * Паттерн-отклонение = общее отклонение минус 85-й процентиль общих отклонений
+ * Это помогает выявить локализованные дефекты vs общее снижение
+ */
 export function calculatePatternDeviations(
   results: { threshold: number; eccentricity: number }[],
   age?: number
 ): number[] {
-  // Calculate total deviations
-  const totalDeviations = results.map(r =>
-    getTotalDeviation(r.threshold, r.eccentricity, age)
-  );
+  // Вычисляем общие отклонения
+  const totalDeviations = results.map(r => getTotalDeviation(r.threshold, r.eccentricity, age));
 
-  // Find the 7th highest value (approximately 85th percentile for 54 points)
+  // Находим 7-е наибольшее значение (примерно 85-й процентиль для 54 точек)
   const sortedTD = [...totalDeviations].sort((a, b) => b - a);
   const percentileIndex = Math.floor(sortedTD.length * 0.15);
   const generalHeight = sortedTD[percentileIndex] || 0;
 
-  // Pattern deviation = total deviation - general height
+  // Паттерн-отклонение = общее отклонение - общая высота
   return totalDeviations.map(td => td - generalHeight);
 }
 
-// Weights for VFI calculation based on eccentricity
-// Central points weighted more heavily
+/**
+ * Возвращает вес точки для расчёта VFI в зависимости от эксцентриситета
+ * Центральные точки имеют больший вес
+ */
 export function getVFIWeight(eccentricity: number): number {
   if (eccentricity <= 5) return 1.0;
   if (eccentricity <= 10) return 0.8;
@@ -101,7 +119,9 @@ export function getVFIWeight(eccentricity: number): number {
   return 0.2;
 }
 
-// Probability levels for defect classification
+/**
+ * Возвращает уровень вероятности для классификации дефекта
+ */
 export function getDefectProbability(deviation: number): string {
   if (deviation >= -1) return 'normal';
   if (deviation >= -5) return 'p<5%';
@@ -110,23 +130,27 @@ export function getDefectProbability(deviation: number): string {
   return 'p<0.5%';
 }
 
-// Color for deviation display
+/**
+ * Возвращает цвет для отображения отклонения
+ */
 export function getDeviationColor(deviation: number): string {
-  if (deviation >= -1) return '#4ade80';  // green - normal
-  if (deviation >= -5) return '#a3e635';  // lime - slight
-  if (deviation >= -10) return '#facc15'; // yellow - mild
-  if (deviation >= -15) return '#fb923c'; // orange - moderate
-  if (deviation >= -20) return '#f87171'; // red - severe
-  return '#991b1b'; // dark red - very severe
+  if (deviation >= -1) return '#4ade80'; // зелёный - норма
+  if (deviation >= -5) return '#a3e635'; // салатовый - незначительное
+  if (deviation >= -10) return '#facc15'; // жёлтый - лёгкое
+  if (deviation >= -15) return '#fb923c'; // оранжевый - умеренное
+  if (deviation >= -20) return '#f87171'; // красный - выраженное
+  return '#991b1b'; // тёмно-красный - тяжёлое
 }
 
-// Threshold color for sensitivity map
+/**
+ * Возвращает цвет для отображения порога чувствительности
+ */
 export function getThresholdColor(threshold: number): string {
-  if (threshold >= 30) return '#22c55e';  // green - excellent
-  if (threshold >= 25) return '#84cc16';  // lime - good
-  if (threshold >= 20) return '#eab308';  // yellow - fair
-  if (threshold >= 15) return '#f97316';  // orange - reduced
-  if (threshold >= 10) return '#ef4444';  // red - low
-  if (threshold >= 5) return '#dc2626';   // dark red - very low
-  return '#7f1d1d'; // very dark red - severe loss
+  if (threshold >= 30) return '#22c55e'; // зелёный - отлично
+  if (threshold >= 25) return '#84cc16'; // салатовый - хорошо
+  if (threshold >= 20) return '#eab308'; // жёлтый - удовлетворительно
+  if (threshold >= 15) return '#f97316'; // оранжевый - снижено
+  if (threshold >= 10) return '#ef4444'; // красный - низко
+  if (threshold >= 5) return '#dc2626'; // тёмно-красный - очень низко
+  return '#7f1d1d'; // бордовый - тяжёлая потеря
 }

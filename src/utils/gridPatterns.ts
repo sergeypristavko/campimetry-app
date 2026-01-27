@@ -1,27 +1,44 @@
+/**
+ * Генерация паттернов сетки тестовых точек
+ * Поддерживаемые паттерны: 24-2, 10-2, 30-2
+ */
+
 import { TestPoint, GridPattern } from '../types';
 
-// Generate unique ID for a point
+/**
+ * Генерирует уникальный ID для точки
+ */
 function pointId(x: number, y: number): string {
   return `${x}:${y}`;
 }
 
-// Calculate eccentricity from center
+/**
+ * Вычисляет эксцентриситет точки (расстояние от центра в градусах)
+ */
 function eccentricity(x: number, y: number): number {
   return Math.sqrt(x * x + y * y);
 }
 
-// Check if point is in the blind spot region (approximately 15° temporal, 1.5° below horizontal)
+/**
+ * Проверяет, находится ли точка в области слепого пятна
+ * Слепое пятно расположено примерно в 15° темпорально и 1.5° ниже горизонтали
+ * @param x - X-координата в градусах
+ * @param y - Y-координата в градусах
+ * @param isRightEye - true для правого глаза (OD)
+ */
 function isBlindSpotRegion(x: number, y: number, isRightEye: boolean): boolean {
-  // Blind spot is at approximately 15° temporal from fixation
-  // For right eye (OD): blind spot is to the right (+x)
-  // For left eye (OS): blind spot is to the left (-x)
+  // Для правого глаза (OD): слепое пятно справа (+x)
+  // Для левого глаза (OS): слепое пятно слева (-x)
   const blindSpotX = isRightEye ? 15 : -15;
   const blindSpotY = -1.5;
   const distance = Math.sqrt(Math.pow(x - blindSpotX, 2) + Math.pow(y - blindSpotY, 2));
-  return distance < 5; // Blind spot radius approximately 5 degrees
+  return distance < 5; // Радиус слепого пятна примерно 5 градусов
 }
 
-// 24-2 pattern: 54 points, 6° intervals, ±24° from center
+/**
+ * Паттерн 24-2: 54 точки с шагом 6°, охват ±24° от центра
+ * Стандартный тест для диагностики глаукомы
+ */
 export function generate24_2Pattern(): TestPoint[] {
   const points: TestPoint[] = [];
   const step = 6;
@@ -30,14 +47,14 @@ export function generate24_2Pattern(): TestPoint[] {
     for (let y = -24; y <= 24; y += step) {
       const ecc = eccentricity(x, y);
 
-      // Skip center point and points outside the main field
+      // Пропускаем центральную точку и точки вне основного поля
       if (ecc === 0 || ecc > 27) continue;
 
-      // Skip points in the extreme corners
+      // Пропускаем точки в крайних углах
       if (Math.abs(x) === 24 && Math.abs(y) === 24) continue;
 
       if (x === 0 || y === 0) {
-        // On axes, use offset pattern
+        // На осях используем смещённый паттерн
         if (x === 0 && y !== 0) {
           points.push({
             id: pointId(3, y),
@@ -76,13 +93,16 @@ export function generate24_2Pattern(): TestPoint[] {
     }
   }
 
-  // Remove duplicates based on ID
+  // Удаляем дубликаты по ID
   const uniquePoints = Array.from(new Map(points.map(p => [p.id, p])).values());
 
   return uniquePoints;
 }
 
-// 10-2 pattern: 68 points, 2° intervals, ±10° from center (macular)
+/**
+ * Паттерн 10-2: 68 точек с шагом 2°, охват ±10° от центра
+ * Тест макулярной области для детального исследования центрального зрения
+ */
 export function generate10_2Pattern(): TestPoint[] {
   const points: TestPoint[] = [];
   const step = 2;
@@ -91,13 +111,13 @@ export function generate10_2Pattern(): TestPoint[] {
     for (let y = -10; y <= 10; y += step) {
       const ecc = eccentricity(x, y);
 
-      // Skip center point
+      // Пропускаем центральную точку
       if (ecc === 0) continue;
 
-      // Skip points outside 10 degrees
+      // Пропускаем точки за пределами 10°
       if (ecc > 11) continue;
 
-      // Add offset for points on axes
+      // Добавляем смещение для точек на осях
       if (x === 0 && y !== 0) {
         points.push({
           id: pointId(1, y),
@@ -135,13 +155,16 @@ export function generate10_2Pattern(): TestPoint[] {
     }
   }
 
-  // Remove duplicates
+  // Удаляем дубликаты
   const uniquePoints = Array.from(new Map(points.map(p => [p.id, p])).values());
 
   return uniquePoints;
 }
 
-// 30-2 pattern: 76 points, 6° intervals, ±30° from center
+/**
+ * Паттерн 30-2: 76 точек с шагом 6°, охват ±30° от центра
+ * Расширенный тест для исследования периферического поля зрения
+ */
 export function generate30_2Pattern(): TestPoint[] {
   const points: TestPoint[] = [];
   const step = 6;
@@ -150,10 +173,10 @@ export function generate30_2Pattern(): TestPoint[] {
     for (let y = -30; y <= 30; y += step) {
       const ecc = eccentricity(x, y);
 
-      // Skip center point and points too far out
+      // Пропускаем центральную точку и слишком далёкие точки
       if (ecc === 0 || ecc > 33) continue;
 
-      // Add offset for points on axes
+      // Добавляем смещение для точек на осях
       if (x === 0 && y !== 0) {
         points.push({
           id: pointId(3, y),
@@ -191,13 +214,15 @@ export function generate30_2Pattern(): TestPoint[] {
     }
   }
 
-  // Remove duplicates
+  // Удаляем дубликаты
   const uniquePoints = Array.from(new Map(points.map(p => [p.id, p])).values());
 
   return uniquePoints;
 }
 
-// Get pattern by name
+/**
+ * Возвращает паттерн по имени
+ */
 export function getPattern(pattern: GridPattern): TestPoint[] {
   switch (pattern) {
     case '24-2':
@@ -211,7 +236,9 @@ export function getPattern(pattern: GridPattern): TestPoint[] {
   }
 }
 
-// Mark blind spot points for a given eye
+/**
+ * Отмечает точки, попадающие в область слепого пятна
+ */
 export function markBlindSpotPoints(points: TestPoint[], eye: 'OD' | 'OS'): TestPoint[] {
   const isRightEye = eye === 'OD';
   return points.map(point => ({
@@ -220,7 +247,10 @@ export function markBlindSpotPoints(points: TestPoint[], eye: 'OD' | 'OS'): Test
   }));
 }
 
-// Shuffle points for random presentation order
+/**
+ * Перемешивает точки для случайного порядка предъявления
+ * Использует алгоритм Фишера-Йетса
+ */
 export function shufflePoints(points: TestPoint[]): TestPoint[] {
   const shuffled = [...points];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -230,7 +260,9 @@ export function shufflePoints(points: TestPoint[]): TestPoint[] {
   return shuffled;
 }
 
-// Get pattern info
+/**
+ * Возвращает информацию о паттерне
+ */
 export function getPatternInfo(pattern: GridPattern): { points: number; description: string } {
   switch (pattern) {
     case '24-2':

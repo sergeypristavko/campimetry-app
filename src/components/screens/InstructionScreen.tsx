@@ -9,6 +9,9 @@ interface InstructionScreenProps {
   onStartTest: () => void;
 }
 
+/**
+ * Экран инструкций перед тестом
+ */
 export function InstructionScreen({
   onNavigate,
   eye,
@@ -18,134 +21,57 @@ export function InstructionScreen({
   const otherEye = eye === 'OD' ? 'левый' : 'правый';
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1a1a2e',
-        color: '#eee',
-        padding: '40px',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <Button variant="ghost" onClick={() => onNavigate('settings')} style={{ marginBottom: '20px' }}>
+    <div className="min-h-screen bg-background text-gray-200 p-10 font-sans">
+      <div className="max-w-xl mx-auto">
+        <Button variant="ghost" onClick={() => onNavigate('settings')} className="mb-5">
           &larr; Назад
         </Button>
 
-        <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Инструкция</h1>
+        <h1 className="text-center mb-8 text-2xl font-bold">Инструкция</h1>
 
         <Card>
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '20px',
-              backgroundColor: 'rgba(233, 69, 96, 0.1)',
-              borderRadius: '8px',
-              marginBottom: '24px',
-            }}
-          >
-            <div style={{ fontSize: '14px', opacity: 0.7, marginBottom: '8px' }}>
-              Тестируемый глаз
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
+          <div className="text-center p-5 bg-primary/10 rounded-lg mb-6">
+            <div className="text-sm opacity-70 mb-2">Тестируемый глаз</div>
+            <div className="text-3xl font-bold">
               {eye === 'OD' ? 'Правый (OD)' : 'Левый (OS)'}
             </div>
           </div>
         </Card>
 
         <Card title="Подготовка">
-          <ol
-            style={{
-              lineHeight: '2',
-              paddingLeft: '24px',
-              margin: 0,
-              color: 'rgba(255,255,255,0.9)',
-            }}
-          >
+          <ol className="leading-8 pl-6 m-0 text-white/90 list-decimal">
             <li>
               <strong>Закройте {otherEye} глаз</strong> или используйте повязку
             </li>
             <li>
               Расположитесь на расстоянии <strong>{screenDistance} см</strong> от экрана
             </li>
-            <li>
-              Убедитесь, что в комнате приглушённое освещение
-            </li>
-            <li>
-              Снимите очки, если носите, или используйте контактные линзы
-            </li>
+            <li>Убедитесь, что в комнате приглушённое освещение</li>
+            <li>Снимите очки, если носите, или используйте контактные линзы</li>
           </ol>
         </Card>
 
         <Card title="Во время теста">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '16px',
-                padding: '16px',
-                backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(74, 222, 128, 0.3)',
-              }}
-            >
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#4ade80',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  flexShrink: 0,
-                }}
-              >
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-4 p-4 bg-success/10 rounded-lg border border-success/30">
+              <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center text-lg flex-shrink-0">
                 +
               </div>
               <div>
-                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                  Смотрите на крестик в центре
-                </div>
-                <div style={{ fontSize: '13px', opacity: 0.8 }}>
+                <div className="font-bold mb-1">Смотрите на крестик в центре</div>
+                <div className="text-[13px] opacity-80">
                   Не переводите взгляд на появляющиеся стимулы
                 </div>
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '16px',
-                padding: '16px',
-                backgroundColor: 'rgba(233, 69, 96, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(233, 69, 96, 0.3)',
-              }}
-            >
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#e94560',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  flexShrink: 0,
-                }}
-              >
+            <div className="flex items-start gap-4 p-4 bg-primary/10 rounded-lg border border-primary/30">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-xs flex-shrink-0">
                 Space
               </div>
               <div>
-                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                  Нажимайте пробел при обнаружении стимула
-                </div>
-                <div style={{ fontSize: '13px', opacity: 0.8 }}>
+                <div className="font-bold mb-1">Нажимайте пробел при обнаружении стимула</div>
+                <div className="text-[13px] opacity-80">
                   Также можно кликнуть мышью в любом месте экрана
                 </div>
               </div>
@@ -154,39 +80,19 @@ export function InstructionScreen({
         </Card>
 
         <Card>
-          <div
-            style={{
-              fontSize: '14px',
-              color: 'rgba(255,255,255,0.7)',
-              lineHeight: '1.6',
-            }}
-          >
-            <p style={{ marginBottom: '12px' }}>
+          <div className="text-sm text-white/70 leading-relaxed">
+            <p className="mb-3">
               Стимулы будут появляться в разных частях поля зрения. Некоторые из них
               будут очень слабыми и трудно различимыми — это нормально.
             </p>
-            <p style={{ margin: 0 }}>
-              Тест можно поставить на паузу в любой момент, нажав клавишу <kbd
-                style={{
-                  backgroundColor: '#0f3460',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                }}
-              >
-                Escape
-              </kbd>
+            <p className="m-0">
+              Тест можно поставить на паузу в любой момент, нажав клавишу{' '}
+              <kbd className="bg-secondary px-1.5 py-0.5 rounded text-xs">Escape</kbd>
             </p>
           </div>
         </Card>
 
-        <Button
-          variant="primary"
-          fullWidth
-          size="lg"
-          onClick={onStartTest}
-          style={{ marginTop: '20px' }}
-        >
+        <Button variant="primary" fullWidth size="lg" onClick={onStartTest} className="mt-5">
           Начать тест
         </Button>
       </div>
