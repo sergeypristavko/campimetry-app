@@ -2,8 +2,8 @@
 
 > Веб-приложение для автоматизированной статической периметрии — исследования поля зрения в домашних условиях
 
-[![GitHub Pages](https://img.shields.io/badge/demo-live-success)](https://username.github.io/campimetry-app/)
-[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://username.github.io/campimetry-app/docs/)
+[![GitHub Pages](https://img.shields.io/badge/demo-live-success)](https://sergeypristavko.github.io/campimetry-app/)
+[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://sergeypristavko.github.io/campimetry-app/docs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 🎯 Описание
@@ -20,7 +20,7 @@
 
 ## 📖 Документация
 
-**[📚 Полная продуктовая документация →](https://username.github.io/campimetry-app/docs/)**
+**[📚 Полная продуктовая документация →](https://sergeypristavko.github.io/campimetry-app/docs/)**
 
 Документация содержит:
 - Медицинский контекст и клиническое применение
@@ -35,7 +35,7 @@
 
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/username/campimetry-app.git
+git clone https://github.com/sergeypristavko/campimetry-app.git
 cd campimetry-app
 
 # Установить зависимости
@@ -103,7 +103,7 @@ campimetry-app/
 - **Статистика:** Anderson & Patella (1999), Bengtsson & Heijl (2008)
 - **Нормы:** Возрастная коррекция -0.7 dB/10 лет
 
-Полные ссылки на научные статьи — в [документации](https://username.github.io/campimetry-app/docs/#/product-spec).
+Полные ссылки на научные статьи — в [документации](https://sergeypristavko.github.io/campimetry-app/docs/#/product-spec).
 
 ## ⚠️ Медицинский дисклеймер
 
@@ -142,9 +142,9 @@ MIT License — свободное использование с указани�
 
 ## 📞 Контакты
 
-- 🐛 [Сообщить об ошибке](https://github.com/username/campimetry-app/issues)
-- 💡 [Предложить улучшение](https://github.com/username/campimetry-app/issues)
-- 📚 [Документация](https://username.github.io/campimetry-app/docs/)
+- 🐛 [Сообщить об ошибке](https://github.com/sergeypristavko/campimetry-app/issues)
+- 💡 [Предложить улучшение](https://github.com/sergeypristavko/campimetry-app/issues)
+- 📚 [Документация](https://sergeypristavko.github.io/campimetry-app/docs/)
 
 ---
 

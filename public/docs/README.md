@@ -116,7 +116,7 @@
 
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/username/campimetry-app.git
+git clone https://github.com/sergeypristavko/campimetry-app.git
 
 # Установить зависимости
 npm install
@@ -152,10 +152,10 @@ npm run build
 
 ## 🤝 Обратная связь
 
-- 🐛 [Сообщить об ошибке](https://github.com/username/campimetry-app/issues)
-- 💡 [Предложить улучшение](https://github.com/username/campimetry-app/issues)
+- 🐛 [Сообщить об ошибке](https://github.com/sergeypristavko/campimetry-app/issues)
+- 💡 [Предложить улучшение](https://github.com/sergeypristavko/campimetry-app/issues)
 - 📧 Email: your-email@example.com
-- 📦 [GitHub Repository](https://github.com/username/campimetry-app)
+- 📦 [GitHub Repository](https://github.com/sergeypristavko/campimetry-app)
 
 ---
 

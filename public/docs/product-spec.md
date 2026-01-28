@@ -682,4 +682,4 @@ AND False Negatives < 33%
 **Версия:** 1.0
 **Дата:** 28 января 2026
 **Автор:** Campimetry App Team
-**Контакт:** [GitHub Issues](https://github.com/username/campimetry-app/issues)
+**Контакт:** [GitHub Issues](https://github.com/sergeypristavko/campimetry-app/issues)

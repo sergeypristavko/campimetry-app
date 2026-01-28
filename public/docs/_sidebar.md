@@ -27,5 +27,5 @@
 
 * **🔗 Ссылки**
   * [🚀 Открыть приложение](../)
-  * [📦 GitHub Repository](https://github.com/username/campimetry-app)
-  * [🐛 Сообщить об ошибке](https://github.com/username/campimetry-app/issues)
+  * [📦 GitHub Repository](https://github.com/sergeypristavko/campimetry-app)
+  * [🐛 Сообщить об ошибке](https://github.com/sergeypristavko/campimetry-app/issues)
