@@ -10,7 +10,7 @@ import {
   StaircaseState,
   AppSettings,
 } from '../types';
-import { getPattern, markBlindSpotPoints, shufflePoints } from '../utils/gridPatterns';
+import { getPattern, markBlindSpotPoints, shufflePoints } from '../utils/grid';
 import {
   initializeStaircase,
   processResponse,
@@ -20,8 +20,8 @@ import {
 } from '../utils/algorithms';
 import { calculateStatistics } from '../utils/statistics';
 import { generateSessionId } from './useStorage';
-import { isInUIZone } from '../utils/uiZoneDetection';
-import { calculateStimulusSizePx, calculateStimulusPosition } from '../utils/stimulusCalculations';
+import { isInUIZone } from '../utils/ui-zone';
+import { calculateStimulusSizePx, calculateStimulusPosition } from '../utils/stimulus';
 
 interface UseTestProps {
   eye: Eye;

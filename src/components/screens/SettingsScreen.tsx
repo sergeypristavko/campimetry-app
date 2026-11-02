@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Screen, Eye, GridPattern, TestStrategy, AppSettings } from '../../types';
-import { getPatternInfo } from '../../utils/gridPatterns';
+import { getPatternInfo } from '../../utils/grid';
 
 interface SettingsScreenProps {
   onNavigate: (screen: Screen) => void;

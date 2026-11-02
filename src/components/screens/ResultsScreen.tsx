@@ -10,7 +10,7 @@ import {
   formatReliabilityPercent,
   isReliabilityAcceptable,
 } from '../../utils/statistics';
-import { exportSessionToPDF } from '../../utils/pdfExport';
+import { exportSessionToPDF } from '../../utils/pdf';
 import {
   formatDuration,
   formatDate,

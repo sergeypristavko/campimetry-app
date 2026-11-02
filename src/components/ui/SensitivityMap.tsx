@@ -1,6 +1,6 @@
 import { ThresholdResult, TestPoint, GridPattern, Eye } from '../../types';
-import { getThresholdColor, getDeviationColor } from '../../utils/normalValues';
-import { getPattern } from '../../utils/gridPatterns';
+import { getThresholdColor, getDeviationColor } from '../../utils/colors';
+import { getPattern } from '../../utils/grid';
 
 interface SensitivityMapProps {
   results: ThresholdResult[];

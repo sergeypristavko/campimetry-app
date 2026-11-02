@@ -4,7 +4,7 @@ import { Stimulus } from '../ui/Stimulus';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Button } from '../ui/Button';
 import { Eye, AppSettings } from '../../types';
-import { calculateStimulusSizePx } from '../../utils/stimulusCalculations';
+import { calculateStimulusSizePx } from '../../utils/stimulus';
 
 interface TestScreenProps {
   eye: Eye;
